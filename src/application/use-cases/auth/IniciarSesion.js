@@ -26,24 +26,27 @@ class IniciarSesion {
 
     // 4. Generar el token JWT
     const token = jwt.sign(
-      {
-        id: usuario.id,
-        email: usuario.email,
-        rol: usuario.rol.nombreRol,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
-    );
+  {
+    id: usuario.id,
+    email: usuario.email,
+    nombre: usuario.nombre,
+    apellido: usuario.apellido,
+    rol: usuario.rol.nombreRol,
+  },
+  process.env.JWT_SECRET,
+  { expiresIn: process.env.JWT_EXPIRES_IN }
+);
 
-    return {
-      token,
-      usuario: {
-        id: usuario.id,
-        nombre: usuario.nombre,
-        email: usuario.email,
-        rol: usuario.rol.nombreRol,
-      },
-    };
+return {
+  token,
+  usuario: {
+    id: usuario.id,
+    nombre: usuario.nombre,
+    apellido: usuario.apellido,
+    email: usuario.email,
+    rol: usuario.rol.nombreRol,
+  },
+};
   }
 }
 

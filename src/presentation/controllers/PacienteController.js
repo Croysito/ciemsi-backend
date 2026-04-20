@@ -5,10 +5,12 @@ const ObtenerPaciente = require('../../application/use-cases/pacientes/ObtenerPa
 const PacienteRepository = require('../../infrastructure/repositories/PacienteRepository');
 const HistorialRepository = require('../../infrastructure/repositories/HistorialRepository');
 const CiudadRepository = require('../../infrastructure/repositories/CiudadRepository');
+const UsuarioRepository = require('../../infrastructure/repositories/UsuarioRepository');
 
 const pacienteRepository = new PacienteRepository();
 const historialRepository = new HistorialRepository();
 const ciudadRepository = new CiudadRepository();
+const usuarioRepository = new UsuarioRepository();
 
 class PacienteController {
   async listar(req, res) {
@@ -34,19 +36,22 @@ class PacienteController {
 
   async registrar(req, res) {
     try {
-      const { ci, nombre, edad, telefono, fechaNacimiento, ciudadId } = req.body;
+      const { ci, nombre, apellido, email, edad, telefono, fechaNacimiento, ciudadId } = req.body;
 
-      if (!ci || !nombre || !ciudadId) {
-        return res.status(400).json({ mensaje: 'CI, nombre y ciudad son requeridos' });
+      if (!ci || !nombre || !apellido || !email || !ciudadId) {
+        return res.status(400).json({ 
+          mensaje: 'CI, nombre, apellido, email y ciudad son requeridos' 
+        });
       }
 
       const useCase = new RegistrarPaciente(
         pacienteRepository,
         historialRepository,
-        ciudadRepository
+        ciudadRepository,
+        usuarioRepository
       );
       const resultado = await useCase.execute({
-        ci, nombre, edad, telefono, fechaNacimiento, ciudadId,
+        ci, nombre, apellido, email, edad, telefono, fechaNacimiento, ciudadId,
       });
       return res.status(201).json(resultado);
     } catch (error) {
@@ -57,15 +62,15 @@ class PacienteController {
   async modificar(req, res) {
     try {
       const { id } = req.params;
-      const { ci, nombre, edad, telefono, fechaNacimiento, ciudadId } = req.body;
+      const { ci, edad, telefono, fechaNacimiento, ciudadId } = req.body;
 
-      if (!ci || !nombre || !ciudadId) {
-        return res.status(400).json({ mensaje: 'CI, nombre y ciudad son requeridos' });
+      if (!ci || !ciudadId) {
+        return res.status(400).json({ mensaje: 'CI y ciudad son requeridos' });
       }
 
       const useCase = new ModificarPaciente(pacienteRepository, ciudadRepository);
       const resultado = await useCase.execute(parseInt(id), {
-        ci, nombre, edad, telefono, fechaNacimiento, ciudadId,
+        ci, edad, telefono, fechaNacimiento, ciudadId,
       });
       return res.status(200).json(resultado);
     } catch (error) {

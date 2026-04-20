@@ -13,6 +13,9 @@ class IUsuarioRepository {
   async updatePassword(id, hashedPassword) {
     throw new Error('Método updatePassword() no implementado');
   }
+  async create({ nombre, apellido, email, password, rolId }) {
+    throw new Error('Método create() no implementado');
+  }
 }
 
 module.exports = IUsuarioRepository;

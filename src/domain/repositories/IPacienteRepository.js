@@ -18,6 +18,9 @@ class IPacienteRepository {
   async update(id, paciente) {
     throw new Error('Método update() no implementado');
   }
+  async findByUsuarioId(usuarioId) {
+    throw new Error('Método findByUsuarioId() no implementado');
+  }
 }
 
 module.exports = IPacienteRepository;

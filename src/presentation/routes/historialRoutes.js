@@ -6,10 +6,12 @@ const authMiddleware = require('../../infrastructure/services/AuthMiddleware');
 // Todas las rutas de historial requieren autenticación
 router.use(authMiddleware);
 
+router.get('/mi-historial', authMiddleware, HistorialController.miHistorial);
 router.post('/notas/:notaId/links', HistorialController.agregarLink);
 router.get('/notas/:notaId/links', HistorialController.obtenerLinksPorTipo);
 router.get('/:pacienteId', HistorialController.obtener);
 router.post('/:pacienteId/notas', HistorialController.agregarNota);
+
 
 
 module.exports = router;

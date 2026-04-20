@@ -4,7 +4,7 @@ class ModificarPaciente {
     this.ciudadRepository = ciudadRepository;
   }
 
-  async execute(id, { ci, nombre, edad, telefono, fechaNacimiento, ciudadId }) {
+  async execute(id, { ci, edad, telefono, fechaNacimiento, ciudadId }) {
     // 1. Verificar que el paciente existe
     const paciente = await this.pacienteRepository.findById(id);
     if (!paciente) {
@@ -18,7 +18,7 @@ class ModificarPaciente {
       throw new Error('Ciudad no válida');
     }
 
-    // 3. Verificar CI duplicado (si cambió)
+    // 3. Verificar CI duplicado si cambió
     if (ci !== paciente.ci) {
       const pacienteConCi = await this.pacienteRepository.findByCi(ci);
       if (pacienteConCi) {
@@ -26,14 +26,13 @@ class ModificarPaciente {
       }
     }
 
-    // 4. Actualizar
+    // 4. Actualizar paciente
     await this.pacienteRepository.update(id, {
       ci,
-      nombre,
       edad,
       telefono,
       fechaNacimiento,
-      ciudad,
+      ciudadId,
     });
 
     return { mensaje: 'Paciente actualizado correctamente' };

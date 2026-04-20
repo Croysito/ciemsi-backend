@@ -3,8 +3,12 @@ const AgregarNota = require('../../application/use-cases/historial/AgregarNota')
 const AgregarLink = require('../../application/use-cases/historial/AgregarLink');
 const ObtenerLinksPorTipo = require('../../application/use-cases/historial/ObtenerLinksPorTipo');
 const HistorialRepository = require('../../infrastructure/repositories/HistorialRepository');
+const ObtenerMiHistorial = require('../../application/use-cases/historial/ObtenerMiHistorial');
+const PacienteRepository = require('../../infrastructure/repositories/PacienteRepository');
+
 
 const historialRepository = new HistorialRepository();
+const pacienteRepository = new PacienteRepository();
 
 class HistorialController {
   async obtener(req, res) {
@@ -79,6 +83,35 @@ class HistorialController {
       return res.status(400).json({ mensaje: error.message });
     }
   }
+  async miHistorial(req, res) {
+    try {
+      console.log('Usuario del token:', req.usuario);
+      const usuarioId = parseInt(req.usuario.id);
+      console.log('Usuario ID parseado:', usuarioId);
+      
+      const useCase = new ObtenerMiHistorial(
+        historialRepository,
+        pacienteRepository
+      );
+      const resultado = await useCase.execute(usuarioId);
+      return res.status(200).json(resultado);
+    } catch (error) {
+      return res.status(404).json({ mensaje: error.message });
+    }
+  }
+  async miHistorial(req, res) {
+  try {
+    const usuarioId = parseInt(req.usuario.id);
+    const useCase = new ObtenerMiHistorial(
+      historialRepository,
+      pacienteRepository
+    );
+    const resultado = await useCase.execute(usuarioId);
+    return res.status(200).json(resultado);
+  } catch (error) {
+    return res.status(404).json({ mensaje: error.message });
+  }
+}
 }
 
 module.exports = new HistorialController();

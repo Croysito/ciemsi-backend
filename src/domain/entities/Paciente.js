@@ -1,12 +1,16 @@
 class Paciente {
-  constructor({ id, ci, nombre, edad, telefono, fechaNacimiento, ciudad }) {
+  constructor({ id, ci, edad, telefono, fechaNacimiento, ciudad, usuario }) {
     this.id = id;
     this.ci = ci;
-    this.nombre = nombre;
     this.edad = edad;
     this.telefono = telefono;
     this.fechaNacimiento = fechaNacimiento;
-    this.ciudad = ciudad; // objeto Ciudad
+    this.ciudad = ciudad;
+    this.usuario = usuario; // objeto Usuario completo
+  }
+
+  get nombreCompleto() {
+    return `${this.usuario.nombre} ${this.usuario.apellido}`;
   }
 }
 
