@@ -15,8 +15,15 @@ const usuarioRepository = new UsuarioRepository();
 class PacienteController {
   async listar(req, res) {
     try {
-      const useCase = new ListarPacientes(pacienteRepository);
-      const pacientes = await useCase.execute();
+      const { rol, ciudadId } = req.usuario;
+      let pacientes;
+
+      if (rol === 'Asistente' && ciudadId) {
+        pacientes = await pacienteRepository.findByCiudad(parseInt(ciudadId));
+      } else {
+        pacientes = await new ListarPacientes(pacienteRepository).execute();
+      }
+
       return res.status(200).json(pacientes);
     } catch (error) {
       return res.status(500).json({ mensaje: error.message });
@@ -39,8 +46,8 @@ class PacienteController {
       const { ci, nombre, apellido, email, edad, telefono, fechaNacimiento, ciudadId } = req.body;
 
       if (!ci || !nombre || !apellido || !email || !ciudadId) {
-        return res.status(400).json({ 
-          mensaje: 'CI, nombre, apellido, email y ciudad son requeridos' 
+        return res.status(400).json({
+          mensaje: 'CI, nombre, apellido, email y ciudad son requeridos'
         });
       }
 

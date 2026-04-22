@@ -1,56 +1,38 @@
 const IUsuarioRepository = require('../../domain/repositories/IUsuarioRepository');
 const Usuario = require('../../domain/entities/Usuario');
 const Rol = require('../../domain/entities/Rol');
+const Ciudad = require('../../domain/entities/Ciudad');
 const pool = require('../database/db');
 
 class UsuarioRepository extends IUsuarioRepository {
   async findByEmail(email) {
     const query = `
       SELECT u.id, u.nombre, u.apellido, u.email, u.password, u.estado,
-            r.id as rol_id, r.nombre_rol
+             r.id as rol_id, r.nombre_rol,
+             c.id as ciudad_id, c.nombre_ciudad
       FROM usuarios u
       INNER JOIN roles r ON u.rol_id = r.id
+      LEFT JOIN ciudades c ON u.ciudad_id = c.id
       WHERE u.email = $1
     `;
     const { rows } = await pool.query(query, [email]);
     if (rows.length === 0) return null;
-
-    const row = rows[0];
-    const rol = new Rol({ id: row.rol_id, nombreRol: row.nombre_rol });
-    return new Usuario({
-      id: row.id,
-      nombre: row.nombre,
-      apellido: row.apellido,
-      email: row.email,
-      password: row.password,
-      estado: row.estado,
-      rol,
-    });
+    return this._mapRow(rows[0]);
   }
-
 
   async findById(id) {
     const query = `
       SELECT u.id, u.nombre, u.apellido, u.email, u.password, u.estado,
-            r.id as rol_id, r.nombre_rol
+             r.id as rol_id, r.nombre_rol,
+             c.id as ciudad_id, c.nombre_ciudad
       FROM usuarios u
       INNER JOIN roles r ON u.rol_id = r.id
+      LEFT JOIN ciudades c ON u.ciudad_id = c.id
       WHERE u.id = $1
     `;
     const { rows } = await pool.query(query, [id]);
     if (rows.length === 0) return null;
-
-    const row = rows[0];
-    const rol = new Rol({ id: row.rol_id, nombreRol: row.nombre_rol });
-    return new Usuario({
-      id: row.id,
-      nombre: row.nombre,
-      apellido: row.apellido,
-      email: row.email,
-      password: row.password,
-      estado: row.estado,
-      rol,
-    });
+    return this._mapRow(rows[0]);
   }
 
   async updatePassword(id, hashedPassword) {
@@ -61,17 +43,35 @@ class UsuarioRepository extends IUsuarioRepository {
     `;
     await pool.query(query, [hashedPassword, id]);
   }
-  async create({ nombre, apellido, email, password, rolId }) {
-  const query = `
-    INSERT INTO usuarios (nombre, apellido, email, password, rol_id, estado)
-    VALUES ($1, $2, $3, $4, $5, true)
-    RETURNING id
-  `;
-  const { rows } = await pool.query(query, [
-    nombre, apellido, email, password, rolId
-  ]);
-  return rows[0].id;
-}
+
+  async create({ nombre, apellido, email, password, rolId, ciudadId }) {
+    const query = `
+      INSERT INTO usuarios (nombre, apellido, email, password, rol_id, ciudad_id, estado)
+      VALUES ($1, $2, $3, $4, $5, $6, true)
+      RETURNING id
+    `;
+    const { rows } = await pool.query(query, [
+      nombre, apellido, email, password, rolId, ciudadId || null
+    ]);
+    return rows[0].id;
+  }
+
+  _mapRow(row) {
+    const rol = new Rol({ id: row.rol_id, nombreRol: row.nombre_rol });
+    const ciudad = row.ciudad_id
+      ? new Ciudad({ id: row.ciudad_id, nombreCiudad: row.nombre_ciudad })
+      : null;
+    return new Usuario({
+      id: row.id,
+      nombre: row.nombre,
+      apellido: row.apellido,
+      email: row.email,
+      password: row.password,
+      estado: row.estado,
+      rol,
+      ciudad,
+    });
+  }
 }
 
 module.exports = UsuarioRepository;

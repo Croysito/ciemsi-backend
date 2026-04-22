@@ -9,59 +9,56 @@ class RegistrarPaciente {
   }
 
   async execute({ ci, nombre, apellido, email, edad, telefono, fechaNacimiento, ciudadId }) {
-    // 1. Verificar que no exista un paciente con ese CI
+    // 1. Verificar CI duplicado
     const pacienteExistente = await this.pacienteRepository.findByCi(ci);
     if (pacienteExistente) {
       throw new Error('Ya existe un paciente con ese CI');
     }
 
-    // 2. Verificar que el email no esté en uso
+    // 2. Verificar email duplicado
     const usuarioExistente = await this.usuarioRepository.findByEmail(email);
     if (usuarioExistente) {
       throw new Error('Ya existe un usuario con ese email');
     }
 
-    // 3. Verificar que la ciudad existe
+    // 3. Verificar ciudad
     const ciudades = await this.ciudadRepository.findAll();
     const ciudad = ciudades.find(c => c.id === parseInt(ciudadId));
     if (!ciudad) {
       throw new Error('Ciudad no válida');
     }
 
-    // 4. Obtener el rol Paciente (id = 3)
-    const rolPacienteId = 3;
-
-    // 5. Hashear el CI como contraseña
+    // 4. Hashear CI como contraseña
     const hashedPassword = await bcrypt.hash(ci, 10);
 
-    // 6. Crear el usuario
+    // 5. Crear usuario con ciudad
     const usuarioId = await this.usuarioRepository.create({
       nombre,
       apellido,
       email,
       password: hashedPassword,
-      rolId: rolPacienteId,
+      rolId: 3, // Paciente
+      ciudadId,
     });
 
-    // 7. Crear el paciente vinculado al usuario
+    // 6. Crear paciente
     const pacienteId = await this.pacienteRepository.create({
       ci,
       edad,
       telefono,
       fechaNacimiento,
-      ciudadId,
       usuarioId,
     });
 
-    // 8. Crear automáticamente su historial clínico
+    // 7. Crear historial
     await this.historialRepository.create(pacienteId);
 
-    return { 
-      mensaje: 'Paciente registrado correctamente', 
+    return {
+      mensaje: 'Paciente registrado correctamente',
       pacienteId,
       credenciales: {
         email,
-        password: ci, // Solo se muestra una vez
+        password: ci,
       }
     };
   }
