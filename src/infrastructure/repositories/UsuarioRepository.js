@@ -19,6 +19,39 @@ class UsuarioRepository extends IUsuarioRepository {
     if (rows.length === 0) return null;
     return this._mapRow(rows[0]);
   }
+  async findByRol(rolId) {
+  const query = `
+    SELECT u.id, u.nombre, u.apellido, u.email, u.password, u.estado,
+           r.id as rol_id, r.nombre_rol,
+           c.id as ciudad_id, c.nombre_ciudad
+    FROM usuarios u
+    INNER JOIN roles r ON u.rol_id = r.id
+    LEFT JOIN ciudades c ON u.ciudad_id = c.id
+    WHERE u.rol_id = $1
+    ORDER BY u.apellido, u.nombre
+  `;
+  const { rows } = await pool.query(query, [rolId]);
+  return rows.map(row => this._mapRow(row));
+}
+
+async update(id, { nombre, apellido, email, ciudadId }) {
+  const query = `
+    UPDATE usuarios
+    SET nombre = $1, apellido = $2, email = $3, 
+        ciudad_id = $4, updated_at = NOW()
+    WHERE id = $5
+  `;
+  await pool.query(query, [nombre, apellido, email, ciudadId, id]);
+}
+
+async updateEstado(id, estado) {
+  const query = `
+    UPDATE usuarios
+    SET estado = $1, updated_at = NOW()
+    WHERE id = $2
+  `;
+  await pool.query(query, [estado, id]);
+}
 
   async findById(id) {
     const query = `

@@ -16,6 +16,24 @@ class IUsuarioRepository {
   async create({ nombre, apellido, email, password, rolId }) {
     throw new Error('Método create() no implementado');
   }
+    async findByRol(rolId) {
+    throw new Error('Método findByRol() no implementado');
+  }
+  async create({ nombre, apellido, email, password, rolId, ciudadId }) {
+    throw new Error('Método create() no implementado');
+  }
+
+  async update(id, { nombre, apellido, email, ciudadId }) {
+    throw new Error('Método update() no implementado');
+  }
+
+  async updatePassword(id, hashedPassword) {
+    throw new Error('Método updatePassword() no implementado');
+  }
+
+  async updateEstado(id, estado) {
+    throw new Error('Método updateEstado() no implementado');
+  }
 }
 
 module.exports = IUsuarioRepository;
