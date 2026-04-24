@@ -89,6 +89,40 @@ async updateEstado(id, estado) {
     return rows[0].id;
   }
 
+  async updateFcmToken(id, fcmToken) {
+  await pool.query(
+    'UPDATE usuarios SET fcm_token = $1 WHERE id = $2',
+    [fcmToken, id]
+  );
+}
+
+async getFcmTokensByRol(rolId) {
+  const { rows } = await pool.query(
+    `SELECT fcm_token FROM usuarios 
+     WHERE rol_id = $1 AND estado = true AND fcm_token IS NOT NULL`,
+    [rolId]
+  );
+  return rows.map(r => r.fcm_token);
+}
+
+async getFcmTokensByCiudadYRol(ciudadId, rolId) {
+  const { rows } = await pool.query(
+    `SELECT fcm_token FROM usuarios 
+     WHERE ciudad_id = $1 AND rol_id = $2 
+     AND estado = true AND fcm_token IS NOT NULL`,
+    [ciudadId, rolId]
+  );
+  return rows.map(r => r.fcm_token);
+}
+
+async getFcmTokenById(id) {
+  const { rows } = await pool.query(
+    'SELECT fcm_token FROM usuarios WHERE id = $1',
+    [id]
+  );
+  return rows[0]?.fcm_token || null;
+}
+
   _mapRow(row) {
     const rol = new Rol({ id: row.rol_id, nombreRol: row.nombre_rol });
     const ciudad = row.ciudad_id

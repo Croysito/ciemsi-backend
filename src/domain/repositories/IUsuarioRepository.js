@@ -34,6 +34,21 @@ class IUsuarioRepository {
   async updateEstado(id, estado) {
     throw new Error('Método updateEstado() no implementado');
   }
+  async updateFcmToken(id, fcmToken) {
+  throw new Error('Método updateFcmToken() no implementado');
+}
+
+async getFcmTokensByRol(rolId) {
+  throw new Error('Método getFcmTokensByRol() no implementado');
+}
+
+async getFcmTokensByCiudadYRol(ciudadId, rolId) {
+  throw new Error('Método getFcmTokensByCiudadYRol() no implementado');
+}
+
+async getFcmTokenById(id) {
+  throw new Error('Método getFcmTokenById() no implementado');
+}
 }
 
 module.exports = IUsuarioRepository;

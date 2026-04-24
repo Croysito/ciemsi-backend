@@ -1,18 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const AsistenteController = require('../controllers/AsistenteController');
 const authMiddleware = require('../../infrastructure/services/AuthMiddleware');
+const UsuarioRepository = require('../../infrastructure/repositories/UsuarioRepository');
+
+const usuarioRepository = new UsuarioRepository();
 
 router.use(authMiddleware);
-
-// Solo Doctora puede gestionar asistentes
-router.get('/', AsistenteController.listar);
-router.post('/', AsistenteController.crear);
-router.put('/:id', AsistenteController.modificar);
-router.patch('/:id/estado', AsistenteController.cambiarEstado);
-
-// Cualquier usuario autenticado puede cambiar su password
-router.post('/cambiar-password', AsistenteController.cambiarPassword);
 
 router.post('/fcm-token', async (req, res) => {
   try {
