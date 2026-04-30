@@ -6,11 +6,13 @@ const PacienteRepository = require('../../infrastructure/repositories/PacienteRe
 const HistorialRepository = require('../../infrastructure/repositories/HistorialRepository');
 const CiudadRepository = require('../../infrastructure/repositories/CiudadRepository');
 const UsuarioRepository = require('../../infrastructure/repositories/UsuarioRepository');
+const HashService = require('../../infrastructure/services/HashService');
 
 const pacienteRepository = new PacienteRepository();
 const historialRepository = new HistorialRepository();
 const ciudadRepository = new CiudadRepository();
 const usuarioRepository = new UsuarioRepository();
+const hashService = new HashService();
 
 class PacienteController {
   async listar(req, res) {
@@ -55,7 +57,8 @@ class PacienteController {
         pacienteRepository,
         historialRepository,
         ciudadRepository,
-        usuarioRepository
+        usuarioRepository,
+        hashService
       );
       const resultado = await useCase.execute({
         ci, nombre, apellido, email, edad, telefono, fechaNacimiento, ciudadId,

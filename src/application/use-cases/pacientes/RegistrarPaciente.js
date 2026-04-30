@@ -1,11 +1,12 @@
-const bcrypt = require('bcryptjs');
+//const bcrypt = require('bcryptjs');
 
 class RegistrarPaciente {
-  constructor(pacienteRepository, historialRepository, ciudadRepository, usuarioRepository) {
+  constructor(pacienteRepository, historialRepository, ciudadRepository, usuarioRepository, hashService) {
     this.pacienteRepository = pacienteRepository;
     this.historialRepository = historialRepository;
     this.ciudadRepository = ciudadRepository;
     this.usuarioRepository = usuarioRepository;
+    this.hashService = hashService;
   }
 
   async execute({ ci, nombre, apellido, email, edad, telefono, fechaNacimiento, ciudadId }) {
@@ -29,7 +30,10 @@ class RegistrarPaciente {
     }
 
     // 4. Hashear CI como contraseña
-    const hashedPassword = await bcrypt.hash(ci, 10);
+    //const hashedPassword = await bcrypt.hash(ci, 10);
+   
+    const hashedPassword = await this.hashService.hashear(ci);
+
 
     // 5. Crear usuario con ciudad
     const usuarioId = await this.usuarioRepository.create({

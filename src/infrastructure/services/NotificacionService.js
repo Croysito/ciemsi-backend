@@ -113,6 +113,30 @@ class NotificacionService {
       });
     }
   }
+  async tratamientoAsignado(tratamientoAsignado) {
+  const tokensAsistentes = await this.usuarioRepository
+    .getFcmTokensByCiudadYRol(tratamientoAsignado.ciudad.id, 2);
+  if (tokensAsistentes.length > 0) {
+    await firebaseService.enviarNotificacionMultiple({
+      tokens: tokensAsistentes,
+      titulo: '💊 Nuevo tratamiento asignado',
+      cuerpo: `Tratamiento: ${tratamientoAsignado.tratamiento.nombreTratamiento}`,
+      datos: { tratamientoId: String(tratamientoAsignado.id), tipo: 'TRATAMIENTO_ASIGNADO' },
+    });
+  }
+}
+
+async tratamientoCompletado(tratamientoAsignado) {
+  const tokensDoctora = await this.usuarioRepository.getFcmTokensByRol(1);
+  if (tokensDoctora.length > 0) {
+    await firebaseService.enviarNotificacionMultiple({
+      tokens: tokensDoctora,
+      titulo: '✅ Tratamiento completado',
+      cuerpo: `El tratamiento ${tratamientoAsignado.tratamiento.nombreTratamiento} fue completado`,
+      datos: { tratamientoId: String(tratamientoAsignado.id), tipo: 'TRATAMIENTO_COMPLETADO' },
+    });
+  }
+}
 }
 
 module.exports = NotificacionService;
