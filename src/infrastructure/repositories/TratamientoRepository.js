@@ -133,17 +133,9 @@ class TratamientoRepository extends ITratamientoRepository {
   }
 
   async completarTratamiento(id) {
-    // 1. Obtener suministros del tratamiento asignado
-    const suministros = await this._getSuministrosAsignados(id);
-
-    // 2. Descontar del inventario cada suministro
-    // El inventario es calculado, no hay tabla física que actualizar
-    // Solo necesitamos que los registros de asignado_suministro existan
-    // La vista los resta automáticamente
-
-    // 3. Actualizar solo el estado del tratamiento asignado.
+    // vista_inventario suma salidas de tratamientos con estado COMPLETADO,
+    // por lo que cambiar el estado aquí descuenta automáticamente el inventario.
     await this.updateEstadoAsignado(id, 'COMPLETADO');
-
     return { mensaje: 'Tratamiento completado e inventario actualizado' };
   }
 
@@ -178,11 +170,15 @@ class TratamientoRepository extends ITratamientoRepository {
              t.id as tratamiento_id, t.nombre_tratamiento,
              t.detalle, t.precio_base,
              cm.id as cita_id, cm.fecha, cm.hora, cm.estado as cita_estado,
-             ci.id as ciudad_id, ci.nombre_ciudad
+             ci.id as ciudad_id, ci.nombre_ciudad,
+             p.id as paciente_id,
+             u.nombre as paciente_nombre, u.apellido as paciente_apellido
       FROM tratamiento_asignado ta
       INNER JOIN tratamientos t ON ta.tratamiento_id = t.id
       INNER JOIN citas_medicas cm ON ta.cita_id = cm.id
       INNER JOIN ciudades ci ON cm.ciudad_id = ci.id
+      INNER JOIN pacientes p ON cm.paciente_id = p.id
+      INNER JOIN usuarios u ON p.usuario_id = u.id
     `;
   }
 
@@ -203,7 +199,11 @@ class TratamientoRepository extends ITratamientoRepository {
       detalle: row.detalle,
       precioBase: row.precio_base,
     });
-    const cita = { id: row.cita_id, fecha: row.fecha, hora: row.hora, estado: row.cita_estado, ciudad };
+    const paciente = {
+      id: row.paciente_id,
+      nombreCompleto: `${row.paciente_nombre} ${row.paciente_apellido}`.trim(),
+    };
+    const cita = { id: row.cita_id, fecha: row.fecha, hora: row.hora, estado: row.cita_estado, ciudad, paciente };
     return new TratamientoAsignado({
       id: row.ta_id,
       tratamiento,

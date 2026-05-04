@@ -23,8 +23,10 @@ router.get('/mi-perfil', async (req, res) => {
   }
 });
 
-router.get('/:id', PacienteController.obtener);
+router.post('/provisional', PacienteController.registrarProvisional);
 router.post('/', PacienteController.registrar);
+router.get('/:id', PacienteController.obtener);
+router.put('/:id/completar', PacienteController.completar);
 router.put('/:id', PacienteController.modificar);
 
 module.exports = router;
