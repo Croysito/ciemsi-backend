@@ -124,6 +124,20 @@ class HistorialRepository extends IHistorialRepository {
       notaId: row.nota_id,
     }));
   }
+
+  async getPacienteByNotaId(notaId) {
+    const query = `
+      SELECT u.nombre, u.apellido
+      FROM notas_evolucion ne
+      JOIN historial_clinico hc ON ne.historial_id = hc.id
+      JOIN pacientes p ON hc.paciente_id = p.id
+      JOIN usuarios u ON p.usuario_id = u.id
+      WHERE ne.id = $1
+    `;
+    const { rows } = await pool.query(query, [notaId]);
+    if (rows.length === 0) return null;
+    return { nombre: rows[0].nombre, apellido: rows[0].apellido };
+  }
 }
 
 module.exports = HistorialRepository;

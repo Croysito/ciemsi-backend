@@ -31,11 +31,43 @@ class GoogleDriveService {
     return tokens;
   }
 
-  // Subir archivo a Drive
-  async uploadFile({ nombre, mimeType, buffer, tokens }) {
+  // Busca una subcarpeta por nombre dentro de parentId; si no existe, la crea
+  async findOrCreateFolder(drive, folderName, parentId) {
+    const sanitized = folderName.replace(/'/g, "\\'");
+    const listResponse = await drive.files.list({
+      q: `name='${sanitized}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`,
+      fields: 'files(id)',
+      spaces: 'drive',
+    });
+
+    if (listResponse.data.files.length > 0) {
+      return listResponse.data.files[0].id;
+    }
+
+    const createResponse = await drive.files.create({
+      requestBody: {
+        name: folderName,
+        mimeType: 'application/vnd.google-apps.folder',
+        parents: [parentId],
+      },
+      fields: 'id',
+    });
+
+    return createResponse.data.id;
+  }
+
+  // Subir archivo a Drive dentro de la subcarpeta del paciente
+  async uploadFile({ nombre, mimeType, buffer, tokens, carpetaPaciente }) {
     this.setCredentials(tokens);
 
     const drive = google.drive({ version: 'v3', auth: this.oauth2Client });
+
+    // Obtener o crear la carpeta del paciente dentro de la carpeta raíz
+    const folderId = await this.findOrCreateFolder(
+      drive,
+      carpetaPaciente,
+      process.env.GOOGLE_DRIVE_FOLDER_ID
+    );
 
     const bufferStream = new stream.PassThrough();
     bufferStream.end(buffer);
@@ -43,7 +75,7 @@ class GoogleDriveService {
     const response = await drive.files.create({
       requestBody: {
         name: nombre,
-        parents: [process.env.GOOGLE_DRIVE_FOLDER_ID],
+        parents: [folderId],
       },
       media: {
         mimeType,

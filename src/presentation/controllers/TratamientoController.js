@@ -37,10 +37,10 @@ class TratamientoController {
       if (req.usuario?.rol === 'Paciente') {
         return res.status(403).json({ mensaje: 'No autorizado' });
       }
-      const { nombreTratamiento, detalle, precioBase } = req.body;
-      const useCase = new CrearTratamiento(tratamientoRepository);
+      const { nombreTratamiento, detalle, precioBase, medicamentosBase } = req.body;
+      const useCase = new CrearTratamiento(tratamientoRepository, suministroRepository);
       const resultado = await useCase.execute({
-        nombreTratamiento, detalle, precioBase,
+        nombreTratamiento, detalle, precioBase, medicamentosBase,
       });
       return res.status(201).json(resultado);
     } catch (error) {

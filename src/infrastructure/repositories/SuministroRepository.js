@@ -4,10 +4,7 @@ const pool = require('../database/db');
 
 class SuministroRepository extends ISuministroRepository {
   async findAll() {
-    const { rows } = await pool.query(
-      `SELECT id, nombre_suministro, unidad_medida, marca, tipo, umbral, estado
-       FROM suministros WHERE estado = true ORDER BY nombre_suministro`
-    );
+    const { rows } = await pool.query(this._queryConPreciosPEPS());
     return rows.map(row => this._mapRow(row));
   }
 
@@ -23,9 +20,7 @@ class SuministroRepository extends ISuministroRepository {
 
   async findByTipo(tipo) {
     const { rows } = await pool.query(
-      `SELECT id, nombre_suministro, unidad_medida, marca, tipo, umbral, estado
-       FROM suministros WHERE tipo = $1 AND estado = true
-       ORDER BY nombre_suministro`,
+      this._queryConPreciosPEPS('AND su.tipo = $1'),
       [tipo]
     );
     return rows.map(row => this._mapRow(row));
@@ -94,7 +89,51 @@ class SuministroRepository extends ISuministroRepository {
       tipo: row.tipo,
       umbral: row.umbral,
       estado: row.estado,
+      precioVentaBase: row.precio_venta_base ?? null,
     });
+  }
+
+  _queryConPreciosPEPS(whereExtra = '') {
+    return `
+      WITH lotes AS (
+        SELECT
+          cs.suministro_id,
+          cs.precio_venta_base,
+          SUM(cs.cantidad) OVER (
+            PARTITION BY cs.suministro_id
+            ORDER BY c.fecha ASC, cs.id ASC
+          ) AS cum_entrada
+        FROM compra_suministro cs
+        INNER JOIN compras c ON c.id = cs.compra_id
+        WHERE cs.precio_venta_base IS NOT NULL
+      ),
+      salidas AS (
+        SELECT
+          asu.suministro_id,
+          COALESCE(SUM(asu.cantidad), 0) AS total_salidas
+        FROM asignado_suministro asu
+        INNER JOIN tratamiento_asignado ta ON ta.id = asu.tratamiento_asignado_id
+        WHERE ta.estado = 'COMPLETADO'
+        GROUP BY asu.suministro_id
+      ),
+      precio_peps AS (
+        SELECT DISTINCT ON (l.suministro_id)
+          l.suministro_id,
+          l.precio_venta_base
+        FROM lotes l
+        LEFT JOIN salidas s ON s.suministro_id = l.suministro_id
+        WHERE l.cum_entrada > COALESCE(s.total_salidas, 0)
+        ORDER BY l.suministro_id, l.cum_entrada ASC
+      )
+      SELECT
+        su.id, su.nombre_suministro, su.unidad_medida, su.marca,
+        su.tipo, su.umbral, su.estado,
+        pp.precio_venta_base
+      FROM suministros su
+      LEFT JOIN precio_peps pp ON pp.suministro_id = su.id
+      WHERE su.estado = true ${whereExtra}
+      ORDER BY su.nombre_suministro
+    `;
   }
 }
 

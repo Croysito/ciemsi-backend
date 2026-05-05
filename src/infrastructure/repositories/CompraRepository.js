@@ -67,12 +67,12 @@ class CompraRepository extends ICompraRepository {
     return rows[0].id;
   }
 
-  async addItem({ compraId, suministroId, cantidad, precioUnitario, total, fechaVencimiento }) {
+  async addItem({ compraId, suministroId, cantidad, precioUnitario, total, fechaVencimiento, precioVentaBase }) {
     const { rows } = await pool.query(
       `INSERT INTO compra_suministro
-       (compra_id, suministro_id, cantidad, precio_unitario, total, fecha_vencimiento)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-      [compraId, suministroId, cantidad, precioUnitario, total, fechaVencimiento || null]
+       (compra_id, suministro_id, cantidad, precio_unitario, total, fecha_vencimiento, precio_venta_base)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+      [compraId, suministroId, cantidad, precioUnitario, total, fechaVencimiento || null, precioVentaBase || null]
     );
     return rows[0].id;
   }
@@ -80,7 +80,7 @@ class CompraRepository extends ICompraRepository {
   async _getItems(compraId) {
     const { rows } = await pool.query(
       `SELECT cs.id, cs.compra_id, cs.cantidad, cs.precio_unitario,
-              cs.total, cs.fecha_vencimiento,
+              cs.total, cs.fecha_vencimiento, cs.precio_venta_base,
               s.id as suministro_id, s.nombre_suministro,
               s.unidad_medida, s.tipo
        FROM compra_suministro cs
@@ -101,6 +101,7 @@ class CompraRepository extends ICompraRepository {
       precioUnitario: row.precio_unitario,
       total: row.total,
       fechaVencimiento: row.fecha_vencimiento,
+      precioVentaBase: row.precio_venta_base,
     }));
   }
 }

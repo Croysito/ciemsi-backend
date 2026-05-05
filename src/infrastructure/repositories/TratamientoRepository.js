@@ -13,7 +13,12 @@ class TratamientoRepository extends ITratamientoRepository {
       `SELECT id, nombre_tratamiento, detalle, precio_base
        FROM tratamientos ORDER BY nombre_tratamiento`
     );
-    return rows.map(row => this._mapTratamiento(row));
+    const result = [];
+    for (const row of rows) {
+      const medicamentosBase = await this.getMedicamentosBase(row.id);
+      result.push(this._mapTratamiento(row, medicamentosBase));
+    }
+    return result;
   }
 
   async findById(id) {
@@ -33,6 +38,66 @@ class TratamientoRepository extends ITratamientoRepository {
       [nombreTratamiento, detalle, precioBase || 0]
     );
     return rows[0].id;
+  }
+
+  async addMedicamentoBase({ tratamientoId, suministroId, cantidad }) {
+    await pool.query(
+      `INSERT INTO tratamiento_medicamento_base (tratamiento_id, suministro_id, cantidad)
+       VALUES ($1, $2, $3)`,
+      [tratamientoId, suministroId, cantidad]
+    );
+  }
+
+  async getMedicamentosBase(tratamientoId) {
+    const { rows } = await pool.query(
+      `WITH lotes AS (
+        SELECT
+          cs.suministro_id,
+          cs.precio_venta_base,
+          SUM(cs.cantidad) OVER (
+            PARTITION BY cs.suministro_id
+            ORDER BY c.fecha ASC, cs.id ASC
+          ) AS cum_entrada
+        FROM compra_suministro cs
+        INNER JOIN compras c ON c.id = cs.compra_id
+        WHERE cs.precio_venta_base IS NOT NULL
+      ),
+      salidas AS (
+        SELECT
+          asu.suministro_id,
+          COALESCE(SUM(asu.cantidad), 0) AS total_salidas
+        FROM asignado_suministro asu
+        INNER JOIN tratamiento_asignado ta ON ta.id = asu.tratamiento_asignado_id
+        WHERE ta.estado = 'COMPLETADO'
+        GROUP BY asu.suministro_id
+      ),
+      precio_peps AS (
+        SELECT DISTINCT ON (l.suministro_id)
+          l.suministro_id,
+          l.precio_venta_base
+        FROM lotes l
+        LEFT JOIN salidas s ON s.suministro_id = l.suministro_id
+        WHERE l.cum_entrada > COALESCE(s.total_salidas, 0)
+        ORDER BY l.suministro_id, l.cum_entrada ASC
+      )
+      SELECT
+        tmb.suministro_id,
+        s.nombre_suministro,
+        tmb.cantidad,
+        pp.precio_venta_base
+      FROM tratamiento_medicamento_base tmb
+      INNER JOIN suministros s ON s.id = tmb.suministro_id
+      LEFT JOIN precio_peps pp ON pp.suministro_id = tmb.suministro_id
+      WHERE tmb.tratamiento_id = $1
+      ORDER BY s.nombre_suministro`,
+      [tratamientoId]
+    );
+    return rows.map(row => ({
+      suministroId: row.suministro_id,
+      nombreSuministro: row.nombre_suministro,
+      cantidad: row.cantidad,
+      precioVentaBase: row.precio_venta_base ?? null,
+    }));
   }
 
   async update(id, { nombreTratamiento, detalle, precioBase }) {
@@ -182,12 +247,13 @@ class TratamientoRepository extends ITratamientoRepository {
     `;
   }
 
-  _mapTratamiento(row) {
+  _mapTratamiento(row, medicamentosBase = []) {
     return new Tratamiento({
       id: row.id,
       nombreTratamiento: row.nombre_tratamiento,
       detalle: row.detalle,
       precioBase: row.precio_base,
+      medicamentosBase,
     });
   }
 

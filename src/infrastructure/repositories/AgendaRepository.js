@@ -41,8 +41,8 @@ class AgendaRepository extends IAgendaRepository {
 
   async create({ fecha, diasSemana, horaInicio, horaFin, intervalo, ciudadId }) {
     const { rows } = await pool.query(
-      `INSERT INTO agenda (fecha, dias_semana, hora_inicio, hora_fin, intervalo, ciudad_id)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      `INSERT INTO agenda (fecha, dias_semana, hora_inicio, hora_fin, intervalo, ciudad_id, estado)
+       VALUES ($1, $2, $3, $4, $5, $6, true) RETURNING id`,
       [
         fecha || null,
         diasSemana ? diasSemana : null,
@@ -70,7 +70,10 @@ class AgendaRepository extends IAgendaRepository {
   _getDiaSemana(fecha) {
     const dias = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES',
                   'JUEVES', 'VIERNES', 'SABADO'];
-    return dias[new Date(fecha).getDay()];
+    // Parsear partes directamente para evitar que JS interprete la fecha en UTC
+    // y devuelva el día incorrecto en zonas horarias negativas (ej. Bolivia UTC-4)
+    const [y, m, d] = fecha.split('-').map(Number);
+    return dias[new Date(y, m - 1, d).getDay()];
   }
 
   _mapRow(row) {
@@ -81,13 +84,24 @@ class AgendaRepository extends IAgendaRepository {
     return new Agenda({
       id: row.id,
       fecha: row.fecha,
-      diasSemana: row.dias_semana,
+      diasSemana: this._parseDiasSemana(row.dias_semana),
       horaInicio: row.hora_inicio,
       horaFin: row.hora_fin,
       intervalo: row.intervalo,
       ciudad,
       estado: row.estado,
     });
+  }
+
+  _parseDiasSemana(value) {
+    if (!value) return null;
+    if (Array.isArray(value)) return value;
+    // Formato PostgreSQL TEXT: "{LUNES,MARTES}" → ["LUNES", "MARTES"]
+    if (typeof value === 'string' && value.startsWith('{')) {
+      const inner = value.slice(1, -1);
+      return inner ? inner.split(',') : [];
+    }
+    return null;
   }
 }
 

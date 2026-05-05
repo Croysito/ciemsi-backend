@@ -29,6 +29,10 @@ class RegistrarCompra {
         throw new Error(`Suministro ${item.suministroId} no encontrado`);
       }
 
+      if (suministro?.tipo === 'MEDICAMENTO' && !item.precioVentaBase) {
+        throw new Error(`precioVentaBase es requerido para el medicamento ${suministroId}`);
+      }
+
       const total = item.cantidad * item.precioUnitario;
       await this.compraRepository.addItem({
         compraId,
@@ -37,6 +41,7 @@ class RegistrarCompra {
         precioUnitario: item.precioUnitario,
         total,
         fechaVencimiento: item.fechaVencimiento || null,
+        precioVentaBase: item.precioVentaBase || null,
       });
     }
 
