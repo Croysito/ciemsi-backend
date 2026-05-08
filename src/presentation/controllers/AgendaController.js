@@ -12,10 +12,9 @@ class AgendaController {
   async listar(req, res) {
     try {
       const { ciudadId } = req.query;
-      if (!ciudadId) {
-        return res.status(400).json({ mensaje: 'ciudadId es requerido' });
-      }
-      const agendas = await agendaRepository.findByCiudad(parseInt(ciudadId));
+      const agendas = await agendaRepository.findByCiudad(
+        ciudadId ? parseInt(ciudadId) : null
+      );
       return res.status(200).json(agendas);
     } catch (error) {
       return res.status(500).json({ mensaje: error.message });
@@ -32,7 +31,10 @@ class AgendaController {
       }
       const useCase = new CrearAgenda(agendaRepository, ciudadRepository);
       const resultado = await useCase.execute({
-        fecha, diasSemana, horaInicio, horaFin, intervalo, ciudadId
+        fecha, diasSemana, horaInicio, horaFin, intervalo, ciudadId,
+        usuarioId: req.usuario.id,
+        rolUsuario: req.usuario.rol,
+        ciudadIdUsuario: req.usuario.ciudadId,
       });
       return res.status(201).json(resultado);
     } catch (error) {
@@ -51,6 +53,20 @@ class AgendaController {
       const useCase = new ObtenerDisponibilidad(agendaRepository, citaRepository);
       const resultado = await useCase.execute(parseInt(ciudadId), fecha);
       return res.status(200).json(resultado);
+    } catch (error) {
+      return res.status(500).json({ mensaje: error.message });
+    }
+  }
+
+  async cambiarEstado(req, res) {
+    try {
+      const { id } = req.params;
+      const { estado } = req.body;
+      if (typeof estado !== 'boolean') {
+        return res.status(400).json({ mensaje: 'El campo estado debe ser booleano' });
+      }
+      await agendaRepository.updateEstado(parseInt(id), estado);
+      return res.status(200).json({ mensaje: 'Estado de agenda actualizado correctamente' });
     } catch (error) {
       return res.status(500).json({ mensaje: error.message });
     }

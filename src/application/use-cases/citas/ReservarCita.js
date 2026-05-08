@@ -6,7 +6,15 @@ class ReservarCita {
   }
 
   async execute({ fecha, hora, pacienteId, servicioId, ciudadId, notas, creadoPor, rolCreador }) {
-    // 1. Verificar disponibilidad
+    // 1. Verificar que el servicio esté permitido para la agenda de esa ciudad y fecha
+    const servicioValido = await this.agendaRepository.isServicioValidoParaAgenda(
+      ciudadId, fecha, servicioId
+    );
+    if (!servicioValido) {
+      throw new Error('El servicio seleccionado no está disponible en esta agenda');
+    }
+
+    // 2. Verificar disponibilidad horaria
     const citasExistentes = await this.citaRepository.findByFechaYCiudad(fecha, ciudadId);
     const horaOcupada = citasExistentes
       .filter(c => c.estado !== 'CANCELADA')

@@ -1,5 +1,5 @@
 class Agenda {
-  constructor({ id, fecha, diasSemana, horaInicio, horaFin, intervalo, ciudad, estado }) {
+  constructor({ id, fecha, diasSemana, horaInicio, horaFin, intervalo, ciudad, estado, usuario }) {
     this.id = id;
     this.fecha = fecha || null;
     this.diasSemana = diasSemana || null;
@@ -8,6 +8,7 @@ class Agenda {
     this.intervalo = intervalo || 30;
     this.ciudad = ciudad;
     this.estado = estado;
+    this.usuario = usuario || null;
   }
 }
 

@@ -6,6 +6,7 @@ const authMiddleware = require('../../infrastructure/services/AuthMiddleware');
 router.use(authMiddleware);
 
 router.get('/', ServicioController.listar);
+router.get('/por-rol', ServicioController.listarPorRol);
 router.post('/', ServicioController.crear);
 router.put('/:id', ServicioController.modificar);
 

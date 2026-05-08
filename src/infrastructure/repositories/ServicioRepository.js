@@ -36,6 +36,18 @@ class ServicioRepository extends IServicioRepository {
     );
   }
 
+  async findByRol(rol) {
+    const { rows } = await pool.query(
+      `SELECT s.id, s.nombre_servicio, s.tiempo_min, s.estado
+       FROM servicios s
+       INNER JOIN servicios_rol sr ON sr.servicio_id = s.id
+       WHERE sr.rol = $1 AND s.estado = true
+       ORDER BY s.nombre_servicio`,
+      [rol]
+    );
+    return rows.map(row => this._mapRow(row));
+  }
+
   _mapRow(row) {
     return new Servicio({
       id: row.id,

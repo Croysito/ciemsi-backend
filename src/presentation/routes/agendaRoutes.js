@@ -8,6 +8,7 @@ router.use(authMiddleware);
 router.get('/', AgendaController.listar);
 router.get('/disponibilidad', AgendaController.disponibilidad);
 router.post('/', AgendaController.crear);
+router.patch('/:id/estado', AgendaController.cambiarEstado);
 router.delete('/:id', AgendaController.eliminar);
 
 module.exports = router;

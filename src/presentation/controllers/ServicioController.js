@@ -27,6 +27,19 @@ class ServicioController {
     }
   }
 
+  async listarPorRol(req, res) {
+    try {
+      const { rol } = req.query;
+      if (!rol) {
+        return res.status(400).json({ mensaje: 'El parámetro rol es requerido' });
+      }
+      const servicios = await servicioRepository.findByRol(rol);
+      return res.status(200).json(servicios);
+    } catch (error) {
+      return res.status(500).json({ mensaje: error.message });
+    }
+  }
+
   async modificar(req, res) {
     try {
       const { id } = req.params;
