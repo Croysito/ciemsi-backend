@@ -1,5 +1,3 @@
-//const bcrypt = require('bcryptjs');
-
 class RegistrarPaciente {
   constructor(pacienteRepository, historialRepository, ciudadRepository, usuarioRepository, hashService) {
     this.pacienteRepository = pacienteRepository;
@@ -30,8 +28,6 @@ class RegistrarPaciente {
     }
 
     // 4. Hashear CI como contraseña
-    //const hashedPassword = await bcrypt.hash(ci, 10);
-   
     const hashedPassword = await this.hashService.hashear(ci);
 
 

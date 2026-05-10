@@ -5,11 +5,18 @@ class ReservarCita {
     this.pacienteRepository = pacienteRepository;
   }
 
-  async execute({ fecha, hora, pacienteId, servicioId, ciudadId, notas, creadoPor, rolCreador }) {
-    // 1. Verificar que el servicio esté permitido para la agenda de esa ciudad y fecha
-    const servicioValido = await this.agendaRepository.isServicioValidoParaAgenda(
-      ciudadId, fecha, servicioId
-    );
+  async execute({ fecha, hora, pacienteId, servicioId, ciudadId, agendaId, notas, creadoPor, rolCreador }) {
+    // 1. Verificar que el servicio esté permitido para la agenda seleccionada
+    let servicioValido;
+    if (agendaId) {
+      servicioValido = await this.agendaRepository.isServicioValidoParaAgendaById(
+        agendaId, servicioId
+      );
+    } else {
+      servicioValido = await this.agendaRepository.isServicioValidoParaAgenda(
+        ciudadId, fecha, servicioId
+      );
+    }
     if (!servicioValido) {
       throw new Error('El servicio seleccionado no está disponible en esta agenda');
     }

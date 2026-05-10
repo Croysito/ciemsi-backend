@@ -1,8 +1,9 @@
 class CompletarPaciente {
-  constructor(pacienteRepository, ciudadRepository, usuarioRepository) {
+  constructor(pacienteRepository, ciudadRepository, usuarioRepository, hashService) {
     this.pacienteRepository = pacienteRepository;
     this.ciudadRepository = ciudadRepository;
     this.usuarioRepository = usuarioRepository;
+    this.hashService = hashService;
   }
 
   async execute(id, { ci, nombre, apellido, email, edad, telefono, fechaNacimiento, ciudadId }) {
@@ -32,8 +33,10 @@ class CompletarPaciente {
     const ciudad = ciudades.find(c => c.id === parseInt(ciudadId));
     if (!ciudad) throw new Error('Ciudad no válida');
 
+    const password = await this.hashService.hashear(ci);
+
     await this.pacienteRepository.completar(id, {
-      ci, nombre, apellido, email, edad, telefono, fechaNacimiento, ciudadId,
+      ci, nombre, apellido, email, edad, telefono, fechaNacimiento, ciudadId, password,
     });
 
     return { mensaje: 'Datos del paciente completados correctamente' };

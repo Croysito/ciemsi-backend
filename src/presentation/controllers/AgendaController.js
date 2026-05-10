@@ -1,18 +1,17 @@
 const CrearAgenda = require('../../application/use-cases/agenda/CrearAgenda');
 const ObtenerDisponibilidad = require('../../application/use-cases/agenda/ObtenerDisponibilidad');
-const AgendaRepository = require('../../infrastructure/repositories/AgendaRepository');
-const CitaRepository = require('../../infrastructure/repositories/CitaRepository');
-const CiudadRepository = require('../../infrastructure/repositories/CiudadRepository');
-
-const agendaRepository = new AgendaRepository();
-const citaRepository = new CitaRepository();
-const ciudadRepository = new CiudadRepository();
 
 class AgendaController {
+  constructor({ agendaRepository, citaRepository, ciudadRepository }) {
+    this.agendaRepository = agendaRepository;
+    this.crearAgenda = new CrearAgenda(agendaRepository, ciudadRepository);
+    this.obtenerDisponibilidad = new ObtenerDisponibilidad(agendaRepository, citaRepository);
+  }
+
   async listar(req, res) {
     try {
       const { ciudadId } = req.query;
-      const agendas = await agendaRepository.findByCiudad(
+      const agendas = await this.agendaRepository.findByCiudad(
         ciudadId ? parseInt(ciudadId) : null
       );
       return res.status(200).json(agendas);
@@ -26,11 +25,10 @@ class AgendaController {
       const { fecha, diasSemana, horaInicio, horaFin, intervalo, ciudadId } = req.body;
       if (!horaInicio || !horaFin || !ciudadId) {
         return res.status(400).json({
-          mensaje: 'Hora inicio, hora fin y ciudad son requeridos'
+          mensaje: 'Hora inicio, hora fin y ciudad son requeridos',
         });
       }
-      const useCase = new CrearAgenda(agendaRepository, ciudadRepository);
-      const resultado = await useCase.execute({
+      const resultado = await this.crearAgenda.execute({
         fecha, diasSemana, horaInicio, horaFin, intervalo, ciudadId,
         usuarioId: req.usuario.id,
         rolUsuario: req.usuario.rol,
@@ -47,11 +45,10 @@ class AgendaController {
       const { ciudadId, fecha } = req.query;
       if (!ciudadId || !fecha) {
         return res.status(400).json({
-          mensaje: 'ciudadId y fecha son requeridos'
+          mensaje: 'ciudadId y fecha son requeridos',
         });
       }
-      const useCase = new ObtenerDisponibilidad(agendaRepository, citaRepository);
-      const resultado = await useCase.execute(parseInt(ciudadId), fecha);
+      const resultado = await this.obtenerDisponibilidad.execute(parseInt(ciudadId), fecha);
       return res.status(200).json(resultado);
     } catch (error) {
       return res.status(500).json({ mensaje: error.message });
@@ -65,7 +62,7 @@ class AgendaController {
       if (typeof estado !== 'boolean') {
         return res.status(400).json({ mensaje: 'El campo estado debe ser booleano' });
       }
-      await agendaRepository.updateEstado(parseInt(id), estado);
+      await this.agendaRepository.updateEstado(parseInt(id), estado);
       return res.status(200).json({ mensaje: 'Estado de agenda actualizado correctamente' });
     } catch (error) {
       return res.status(500).json({ mensaje: error.message });
@@ -74,8 +71,7 @@ class AgendaController {
 
   async eliminar(req, res) {
     try {
-      const { id } = req.params;
-      await agendaRepository.delete(parseInt(id));
+      await this.agendaRepository.delete(parseInt(req.params.id));
       return res.status(200).json({ mensaje: 'Agenda eliminada correctamente' });
     } catch (error) {
       return res.status(500).json({ mensaje: error.message });
@@ -83,4 +79,4 @@ class AgendaController {
   }
 }
 
-module.exports = new AgendaController();
+module.exports = AgendaController;

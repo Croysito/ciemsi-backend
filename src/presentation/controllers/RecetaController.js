@@ -1,22 +1,20 @@
 const GenerarReceta = require('../../application/use-cases/recetas/GenerarReceta');
-const RecetaRepository = require('../../infrastructure/repositories/RecetaRepository');
-const CitaRepository = require('../../infrastructure/repositories/CitaRepository');
-const path = require('path');
-
-const recetaRepository = new RecetaRepository();
-const citaRepository = new CitaRepository();
 
 class RecetaController {
+  constructor({ recetaRepository, citaRepository }) {
+    this.recetaRepository = recetaRepository;
+    this.generarReceta = new GenerarReceta(recetaRepository, citaRepository);
+  }
+
   async generar(req, res) {
     try {
       const { citaId, detalle } = req.body;
       if (!citaId || !detalle) {
         return res.status(400).json({
-          mensaje: 'Cita y detalle son requeridos'
+          mensaje: 'Cita y detalle son requeridos',
         });
       }
-      const useCase = new GenerarReceta(recetaRepository, citaRepository);
-      const resultado = await useCase.execute({ citaId, detalle });
+      const resultado = await this.generarReceta.execute({ citaId, detalle });
       return res.status(201).json(resultado);
     } catch (error) {
       return res.status(400).json({ mensaje: error.message });
@@ -25,8 +23,7 @@ class RecetaController {
 
   async obtenerByCita(req, res) {
     try {
-      const { citaId } = req.params;
-      const receta = await recetaRepository.findByCita(parseInt(citaId));
+      const receta = await this.recetaRepository.findByCita(parseInt(req.params.citaId));
       if (!receta) {
         return res.status(404).json({ mensaje: 'No hay receta para esta cita' });
       }
@@ -38,8 +35,7 @@ class RecetaController {
 
   async obtenerWhatsappLink(req, res) {
     try {
-      const { citaId } = req.params;
-      const receta = await recetaRepository.findByCita(parseInt(citaId));
+      const receta = await this.recetaRepository.findByCita(parseInt(req.params.citaId));
       if (!receta) {
         return res.status(404).json({ mensaje: 'No hay receta para esta cita' });
       }
@@ -66,4 +62,4 @@ class RecetaController {
   }
 }
 
-module.exports = new RecetaController();
+module.exports = RecetaController;

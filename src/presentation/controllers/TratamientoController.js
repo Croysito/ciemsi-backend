@@ -4,28 +4,38 @@ const AsignarTratamiento = require('../../application/use-cases/tratamientos/Asi
 const AgregarSupministroAsistente = require('../../application/use-cases/tratamientos/AgregarSupministroAsistente');
 const CompletarTratamiento = require('../../application/use-cases/tratamientos/CompletarTratamiento');
 const CambiarEstadoTratamientoAsignado = require('../../application/use-cases/tratamientos/CambiarEstadoTratamientoAsignado');
-const TratamientoRepository = require('../../infrastructure/repositories/TratamientoRepository');
-const CitaRepository = require('../../infrastructure/repositories/CitaRepository');
-const SuministroRepository = require('../../infrastructure/repositories/SuministroRepository');
-const UsuarioRepository = require('../../infrastructure/repositories/UsuarioRepository');
-const PacienteRepository = require('../../infrastructure/repositories/PacienteRepository');
-const NotificacionService = require('../../infrastructure/services/NotificacionService');
-
-const tratamientoRepository = new TratamientoRepository();
-const citaRepository = new CitaRepository();
-const suministroRepository = new SuministroRepository();
-const usuarioRepository = new UsuarioRepository();
-const pacienteRepository = new PacienteRepository();
-const notificacionService = new NotificacionService(usuarioRepository);
 
 class TratamientoController {
+  constructor({
+    tratamientoRepository,
+    citaRepository,
+    suministroRepository,
+    pacienteRepository,
+    notificacionService,
+  }) {
+    this.tratamientoRepository = tratamientoRepository;
+    this.citaRepository = citaRepository;
+    this.pacienteRepository = pacienteRepository;
+    this.listarTratamientos = new ListarTratamientos(tratamientoRepository);
+    this.crearTratamiento = new CrearTratamiento(tratamientoRepository, suministroRepository);
+    this.asignarTratamiento = new AsignarTratamiento(
+      tratamientoRepository, citaRepository, suministroRepository, notificacionService
+    );
+    this.agregarSupministroAsistente = new AgregarSupministroAsistente(
+      tratamientoRepository, suministroRepository
+    );
+    this.completarTratamiento = new CompletarTratamiento(
+      tratamientoRepository, notificacionService
+    );
+    this.cambiarEstadoTratamientoAsignado = new CambiarEstadoTratamientoAsignado(
+      tratamientoRepository
+    );
+  }
+
   async listar(req, res) {
     try {
-      if (req.usuario?.rol === 'Paciente') {
-        return res.status(403).json({ mensaje: 'No autorizado' });
-      }
-      const useCase = new ListarTratamientos(tratamientoRepository);
-      const tratamientos = await useCase.execute();
+      if (req.usuario?.rol === 'Paciente') return res.status(403).json({ mensaje: 'No autorizado' });
+      const tratamientos = await this.listarTratamientos.execute();
       return res.status(200).json(tratamientos);
     } catch (error) {
       return res.status(500).json({ mensaje: error.message });
@@ -34,12 +44,9 @@ class TratamientoController {
 
   async crear(req, res) {
     try {
-      if (req.usuario?.rol === 'Paciente') {
-        return res.status(403).json({ mensaje: 'No autorizado' });
-      }
+      if (req.usuario?.rol === 'Paciente') return res.status(403).json({ mensaje: 'No autorizado' });
       const { nombreTratamiento, detalle, precioBase, medicamentosBase } = req.body;
-      const useCase = new CrearTratamiento(tratamientoRepository, suministroRepository);
-      const resultado = await useCase.execute({
+      const resultado = await this.crearTratamiento.execute({
         nombreTratamiento, detalle, precioBase, medicamentosBase,
       });
       return res.status(201).json(resultado);
@@ -50,11 +57,8 @@ class TratamientoController {
 
   async modificar(req, res) {
     try {
-      if (req.usuario?.rol === 'Paciente') {
-        return res.status(403).json({ mensaje: 'No autorizado' });
-      }
-      const { id } = req.params;
-      await tratamientoRepository.update(parseInt(id), req.body);
+      if (req.usuario?.rol === 'Paciente') return res.status(403).json({ mensaje: 'No autorizado' });
+      await this.tratamientoRepository.update(parseInt(req.params.id), req.body);
       return res.status(200).json({ mensaje: 'Tratamiento actualizado correctamente' });
     } catch (error) {
       return res.status(400).json({ mensaje: error.message });
@@ -63,20 +67,12 @@ class TratamientoController {
 
   async asignar(req, res) {
     try {
-      if (req.usuario?.rol === 'Paciente') {
-        return res.status(403).json({ mensaje: 'No autorizado' });
-      }
+      if (req.usuario?.rol === 'Paciente') return res.status(403).json({ mensaje: 'No autorizado' });
       const { tratamientoId, citaId, precio, medicamentos } = req.body;
       if (!tratamientoId || !citaId) {
-        return res.status(400).json({
-          mensaje: 'Tratamiento y cita son requeridos'
-        });
+        return res.status(400).json({ mensaje: 'Tratamiento y cita son requeridos' });
       }
-      const useCase = new AsignarTratamiento(
-        tratamientoRepository, citaRepository,
-        suministroRepository, notificacionService
-      );
-      const resultado = await useCase.execute({
+      const resultado = await this.asignarTratamiento.execute({
         tratamientoId, citaId, precio, medicamentos,
       });
       return res.status(201).json(resultado);
@@ -91,23 +87,17 @@ class TratamientoController {
       let tratamientos;
 
       if (rol === 'Paciente') {
-        const paciente = await pacienteRepository.findByUsuarioId(id);
-        if (!paciente) {
-          return res.status(404).json({ mensaje: 'Paciente no encontrado' });
-        }
-        tratamientos = await tratamientoRepository.findAsignadosByPaciente(
-          paciente.id
-        );
+        const paciente = await this.pacienteRepository.findByUsuarioId(id);
+        if (!paciente) return res.status(404).json({ mensaje: 'Paciente no encontrado' });
+        tratamientos = await this.tratamientoRepository.findAsignadosByPaciente(paciente.id);
         tratamientos = tratamientos.map(({ suministros, ...tratamiento }) => ({
           ...tratamiento,
           suministros: [],
         }));
       } else if (rol === 'Asistente' && ciudadId) {
-        tratamientos = await tratamientoRepository.findAsignadosByCiudad(
-          parseInt(ciudadId)
-        );
+        tratamientos = await this.tratamientoRepository.findAsignadosByCiudad(parseInt(ciudadId));
       } else {
-        tratamientos = await tratamientoRepository.findAsignados();
+        tratamientos = await this.tratamientoRepository.findAsignados();
       }
       return res.status(200).json(tratamientos);
     } catch (error) {
@@ -119,14 +109,12 @@ class TratamientoController {
     try {
       const { citaId } = req.params;
       if (req.usuario?.rol === 'Paciente') {
-        const cita = await citaRepository.findById(parseInt(citaId));
+        const cita = await this.citaRepository.findById(parseInt(citaId));
         if (!cita || cita.paciente.usuario.id !== req.usuario.id) {
           return res.status(403).json({ mensaje: 'No autorizado' });
         }
       }
-      const tratamientos = await tratamientoRepository.findAsignadosByCita(
-        parseInt(citaId)
-      );
+      const tratamientos = await this.tratamientoRepository.findAsignadosByCita(parseInt(citaId));
       return res.status(200).json(tratamientos);
     } catch (error) {
       return res.status(500).json({ mensaje: error.message });
@@ -135,20 +123,13 @@ class TratamientoController {
 
   async agregarSupministro(req, res) {
     try {
-      if (req.usuario?.rol === 'Paciente') {
-        return res.status(403).json({ mensaje: 'No autorizado' });
-      }
+      if (req.usuario?.rol === 'Paciente') return res.status(403).json({ mensaje: 'No autorizado' });
       const { id } = req.params;
       const { suministroId, cantidad } = req.body;
       if (!suministroId || !cantidad) {
-        return res.status(400).json({
-          mensaje: 'Suministro y cantidad son requeridos'
-        });
+        return res.status(400).json({ mensaje: 'Suministro y cantidad son requeridos' });
       }
-      const useCase = new AgregarSupministroAsistente(
-        tratamientoRepository, suministroRepository
-      );
-      const resultado = await useCase.execute({
+      const resultado = await this.agregarSupministroAsistente.execute({
         tratamientoAsignadoId: parseInt(id),
         suministroId: parseInt(suministroId),
         cantidad: parseInt(cantidad),
@@ -161,14 +142,8 @@ class TratamientoController {
 
   async completar(req, res) {
     try {
-      if (req.usuario?.rol === 'Paciente') {
-        return res.status(403).json({ mensaje: 'No autorizado' });
-      }
-      const { id } = req.params;
-      const useCase = new CompletarTratamiento(
-        tratamientoRepository, notificacionService
-      );
-      const resultado = await useCase.execute(parseInt(id));
+      if (req.usuario?.rol === 'Paciente') return res.status(403).json({ mensaje: 'No autorizado' });
+      const resultado = await this.completarTratamiento.execute(parseInt(req.params.id));
       return res.status(200).json(resultado);
     } catch (error) {
       return res.status(400).json({ mensaje: error.message });
@@ -177,17 +152,12 @@ class TratamientoController {
 
   async cambiarEstadoAsignado(req, res) {
     try {
-      if (req.usuario?.rol === 'Paciente') {
-        return res.status(403).json({ mensaje: 'No autorizado' });
-      }
-      const { id } = req.params;
+      if (req.usuario?.rol === 'Paciente') return res.status(403).json({ mensaje: 'No autorizado' });
       const { estado } = req.body;
-      if (!estado) {
-        return res.status(400).json({ mensaje: 'El estado es requerido' });
-      }
-
-      const useCase = new CambiarEstadoTratamientoAsignado(tratamientoRepository);
-      const resultado = await useCase.execute(parseInt(id), estado);
+      if (!estado) return res.status(400).json({ mensaje: 'El estado es requerido' });
+      const resultado = await this.cambiarEstadoTratamientoAsignado.execute(
+        parseInt(req.params.id), estado
+      );
       return res.status(200).json(resultado);
     } catch (error) {
       return res.status(400).json({ mensaje: error.message });
@@ -195,4 +165,4 @@ class TratamientoController {
   }
 }
 
-module.exports = new TratamientoController();
+module.exports = TratamientoController;

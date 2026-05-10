@@ -1,16 +1,14 @@
 const SubirArchivoDrive = require('../../application/use-cases/historial/SubirArchivoDrive');
-const HistorialRepository = require('../../infrastructure/repositories/HistorialRepository');
-const GoogleDriveService = require('../../infrastructure/services/GoogleDriveService');
 const multer = require('multer');
 
-const historialRepository = new HistorialRepository();
-const driveService = new GoogleDriveService();
-
-// Multer en memoria (no guarda en disco)
 const upload = multer({ storage: multer.memoryStorage() });
 
 class DriveController {
-  // Middleware de multer para usar en la ruta
+  constructor({ historialRepository, driveService }) {
+    this.driveService = driveService;
+    this.subirArchivoDrive = new SubirArchivoDrive(historialRepository, driveService);
+  }
+
   getUploadMiddleware() {
     return upload.single('archivo');
   }
@@ -29,8 +27,7 @@ class DriveController {
         return res.status(400).json({ mensaje: 'El tipo es requerido' });
       }
 
-      const useCase = new SubirArchivoDrive(historialRepository);
-      const resultado = await useCase.execute({
+      const resultado = await this.subirArchivoDrive.execute({
         notaId: parseInt(notaId),
         nombre: req.file.originalname,
         mimeType: req.file.mimetype,
@@ -47,7 +44,7 @@ class DriveController {
 
   async obtenerAuthUrl(req, res) {
     try {
-      const url = driveService.getAuthUrl();
+      const url = this.driveService.getAuthUrl();
       return res.status(200).json({ url });
     } catch (error) {
       return res.status(500).json({ mensaje: error.message });
@@ -60,7 +57,7 @@ class DriveController {
       if (!code) {
         return res.status(400).json({ mensaje: 'El código es requerido' });
       }
-      const tokens = await driveService.getTokens(code);
+      const tokens = await this.driveService.getTokens(code);
       return res.status(200).json({ tokens });
     } catch (error) {
       return res.status(400).json({ mensaje: error.message });
@@ -68,4 +65,4 @@ class DriveController {
   }
 }
 
-module.exports = new DriveController();
+module.exports = DriveController;

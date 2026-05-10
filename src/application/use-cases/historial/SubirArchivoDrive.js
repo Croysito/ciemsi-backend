@@ -1,9 +1,7 @@
-const GoogleDriveService = require('../../../infrastructure/services/GoogleDriveService');
-
 class SubirArchivoDrive {
-  constructor(historialRepository) {
+  constructor(historialRepository, driveService) {
     this.historialRepository = historialRepository;
-    this.driveService = new GoogleDriveService();
+    this.driveService = driveService;
   }
 
   async execute({ notaId, nombre, mimeType, buffer, tipo, tokens }) {

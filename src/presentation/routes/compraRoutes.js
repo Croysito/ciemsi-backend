@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const CompraController = require('../controllers/CompraController');
-const authMiddleware = require('../../infrastructure/services/AuthMiddleware');
+const { controllers, authMiddleware } = require('../../main/container');
+
+const CompraController = controllers.compraController;
 
 router.use(authMiddleware);
 
-router.get('/', CompraController.listar);
-router.get('/:id', CompraController.obtener);
-router.post('/', CompraController.registrar);
+router.get('/', CompraController.listar.bind(CompraController));
+router.get('/:id', CompraController.obtener.bind(CompraController));
+router.post('/', CompraController.registrar.bind(CompraController));
 
 module.exports = router;

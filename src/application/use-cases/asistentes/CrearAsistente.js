@@ -1,9 +1,8 @@
-const bcrypt = require('bcryptjs');
-
 class CrearAsistente {
-  constructor(usuarioRepository, ciudadRepository) {
+  constructor(usuarioRepository, ciudadRepository, hashService) {
     this.usuarioRepository = usuarioRepository;
     this.ciudadRepository = ciudadRepository;
+    this.hashService = hashService;
   }
 
   async execute({ nombre, apellido, email, ci, ciudadId }) {
@@ -21,7 +20,7 @@ class CrearAsistente {
     }
 
     // 3. Hashear CI como password
-    const hashedPassword = await bcrypt.hash(ci, 10);
+    const hashedPassword = await this.hashService.hashear(ci);
 
     // 4. Crear usuario con rol Asistente (id = 2)
     const usuarioId = await this.usuarioRepository.create({

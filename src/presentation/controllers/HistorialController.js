@@ -2,20 +2,20 @@ const ObtenerHistorial = require('../../application/use-cases/historial/ObtenerH
 const AgregarNota = require('../../application/use-cases/historial/AgregarNota');
 const AgregarLink = require('../../application/use-cases/historial/AgregarLink');
 const ObtenerLinksPorTipo = require('../../application/use-cases/historial/ObtenerLinksPorTipo');
-const HistorialRepository = require('../../infrastructure/repositories/HistorialRepository');
 const ObtenerMiHistorial = require('../../application/use-cases/historial/ObtenerMiHistorial');
-const PacienteRepository = require('../../infrastructure/repositories/PacienteRepository');
-
-
-const historialRepository = new HistorialRepository();
-const pacienteRepository = new PacienteRepository();
 
 class HistorialController {
+  constructor({ historialRepository, pacienteRepository }) {
+    this.obtenerHistorial = new ObtenerHistorial(historialRepository);
+    this.agregarNotaUseCase = new AgregarNota(historialRepository);
+    this.agregarLinkUseCase = new AgregarLink(historialRepository);
+    this.obtenerLinksPorTipoUseCase = new ObtenerLinksPorTipo(historialRepository);
+    this.obtenerMiHistorial = new ObtenerMiHistorial(historialRepository, pacienteRepository);
+  }
+
   async obtener(req, res) {
     try {
-      const { pacienteId } = req.params;
-      const useCase = new ObtenerHistorial(historialRepository);
-      const historial = await useCase.execute(parseInt(pacienteId));
+      const historial = await this.obtenerHistorial.execute(parseInt(req.params.pacienteId));
       return res.status(200).json(historial);
     } catch (error) {
       return res.status(404).json({ mensaje: error.message });
@@ -26,13 +26,10 @@ class HistorialController {
     try {
       const { pacienteId } = req.params;
       const { detalle } = req.body;
-
       if (!detalle) {
         return res.status(400).json({ mensaje: 'El detalle de la nota es requerido' });
       }
-
-      const useCase = new AgregarNota(historialRepository);
-      const resultado = await useCase.execute({
+      const resultado = await this.agregarNotaUseCase.execute({
         pacienteId: parseInt(pacienteId),
         detalle,
       });
@@ -46,13 +43,10 @@ class HistorialController {
     try {
       const { notaId } = req.params;
       const { nombre, link, tipo } = req.body;
-
       if (!nombre || !link || !tipo) {
         return res.status(400).json({ mensaje: 'Nombre, link y tipo son requeridos' });
       }
-
-      const useCase = new AgregarLink(historialRepository);
-      const resultado = await useCase.execute({
+      const resultado = await this.agregarLinkUseCase.execute({
         notaId: parseInt(notaId),
         nombre,
         link,
@@ -68,13 +62,10 @@ class HistorialController {
     try {
       const { notaId } = req.params;
       const { tipo } = req.query;
-
       if (!tipo) {
         return res.status(400).json({ mensaje: 'El tipo es requerido' });
       }
-
-      const useCase = new ObtenerLinksPorTipo(historialRepository);
-      const links = await useCase.execute({
+      const links = await this.obtenerLinksPorTipoUseCase.execute({
         notaId: parseInt(notaId),
         tipo: tipo.toUpperCase(),
       });
@@ -83,35 +74,15 @@ class HistorialController {
       return res.status(400).json({ mensaje: error.message });
     }
   }
+
   async miHistorial(req, res) {
     try {
-      console.log('Usuario del token:', req.usuario);
-      const usuarioId = parseInt(req.usuario.id);
-      console.log('Usuario ID parseado:', usuarioId);
-      
-      const useCase = new ObtenerMiHistorial(
-        historialRepository,
-        pacienteRepository
-      );
-      const resultado = await useCase.execute(usuarioId);
+      const resultado = await this.obtenerMiHistorial.execute(parseInt(req.usuario.id));
       return res.status(200).json(resultado);
     } catch (error) {
       return res.status(404).json({ mensaje: error.message });
     }
   }
-  async miHistorial(req, res) {
-  try {
-    const usuarioId = parseInt(req.usuario.id);
-    const useCase = new ObtenerMiHistorial(
-      historialRepository,
-      pacienteRepository
-    );
-    const resultado = await useCase.execute(usuarioId);
-    return res.status(200).json(resultado);
-  } catch (error) {
-    return res.status(404).json({ mensaje: error.message });
-  }
-}
 }
 
-module.exports = new HistorialController();
+module.exports = HistorialController;

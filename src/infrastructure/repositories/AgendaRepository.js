@@ -12,12 +12,28 @@ class AgendaRepository extends IAgendaRepository {
              a.intervalo, a.estado,
              c.id as ciudad_id, c.nombre_ciudad,
              u.id as usuario_id, u.nombre as usuario_nombre,
-             u.apellido as usuario_apellido, r.nombre_rol
+             u.apellido as usuario_apellido, r.nombre_rol,
+             COALESCE(
+               json_agg(
+                 json_build_object(
+                   'id', s.id,
+                   'nombreServicio', s.nombre_servicio,
+                   'tiempoMin', s.tiempo_min,
+                   'estado', s.estado
+                 ) ORDER BY s.nombre_servicio
+               ) FILTER (WHERE s.id IS NOT NULL),
+               '[]'
+             ) AS servicios
       FROM agenda a
       INNER JOIN ciudades c ON a.ciudad_id = c.id
       LEFT JOIN usuarios u ON a.usuario_id = u.id
       LEFT JOIN roles r ON u.rol_id = r.id
+      LEFT JOIN agenda_servicios agsv ON agsv.agenda_id = a.id
+      LEFT JOIN servicios s ON s.id = agsv.servicio_id AND s.estado = true
       WHERE 1=1 ${filtro}
+      GROUP BY a.id, a.fecha, a.dias_semana, a.hora_inicio, a.hora_fin,
+               a.intervalo, a.estado, c.id, c.nombre_ciudad,
+               u.id, u.nombre, u.apellido, r.nombre_rol
       ORDER BY a.fecha NULLS LAST, a.hora_inicio
     `, params);
     return rows.map(row => this._mapRow(row));
@@ -67,14 +83,41 @@ class AgendaRepository extends IAgendaRepository {
       SELECT EXISTS (
         SELECT 1
         FROM agenda a
-        INNER JOIN usuarios u ON u.id = a.usuario_id
-        INNER JOIN roles r ON r.id = u.rol_id
-        INNER JOIN servicios_rol sr ON sr.rol = r.nombre_rol AND sr.servicio_id = $4
+        LEFT JOIN usuarios u ON u.id = a.usuario_id
+        LEFT JOIN roles r ON r.id = u.rol_id
+        INNER JOIN servicios_rol sr
+          ON sr.servicio_id = $4
+         AND sr.rol = CASE
+           WHEN UPPER(COALESCE(r.nombre_rol, 'ASISTENTE')) IN ('MEDICO', 'DOCTOR', 'DOCTORA') THEN 'Doctora'
+           WHEN UPPER(COALESCE(r.nombre_rol, 'ASISTENTE')) = 'ASISTENTE' THEN 'Asistente'
+           ELSE COALESCE(r.nombre_rol, 'Asistente')
+         END
         WHERE a.ciudad_id = $1
           AND a.estado = true
           AND (a.fecha = $2 OR $3 = ANY(a.dias_semana::text[]))
       ) AS valido
     `, [ciudadId, fecha, diaSemana, servicioId]);
+    return rows[0].valido;
+  }
+
+  async isServicioValidoParaAgendaById(agendaId, servicioId) {
+    const { rows } = await pool.query(`
+      SELECT EXISTS (
+        SELECT 1
+        FROM agenda a
+        LEFT JOIN usuarios u ON u.id = a.usuario_id
+        LEFT JOIN roles r ON r.id = u.rol_id
+        INNER JOIN servicios_rol sr
+          ON sr.servicio_id = $2
+         AND sr.rol = CASE
+           WHEN UPPER(COALESCE(r.nombre_rol, 'ASISTENTE')) IN ('MEDICO', 'DOCTOR', 'DOCTORA') THEN 'Doctora'
+           WHEN UPPER(COALESCE(r.nombre_rol, 'ASISTENTE')) = 'ASISTENTE' THEN 'Asistente'
+           ELSE COALESCE(r.nombre_rol, 'Asistente')
+         END
+        WHERE a.id = $1
+          AND a.estado = true
+      ) AS valido
+    `, [agendaId, servicioId]);
     return rows[0].valido;
   }
 
@@ -105,12 +148,14 @@ class AgendaRepository extends IAgendaRepository {
 
   _mapRow(row) {
     const ciudad = new Ciudad({ id: row.ciudad_id, nombreCiudad: row.nombre_ciudad });
+    const rolCreador = this._normalizeRol(row.nombre_rol || 'Asistente');
     const usuario = row.usuario_id ? {
       id: row.usuario_id,
       nombre: row.usuario_nombre,
       apellido: row.usuario_apellido,
-      rol: row.nombre_rol,
+      rol: rolCreador,
     } : null;
+    const servicios = Array.isArray(row.servicios) ? row.servicios : [];
     return new Agenda({
       id: row.id,
       fecha: row.fecha,
@@ -121,7 +166,17 @@ class AgendaRepository extends IAgendaRepository {
       ciudad,
       estado: row.estado,
       usuario,
+      rolCreador,
+      servicios,
     });
+  }
+
+  _normalizeRol(rol) {
+    const value = (rol || '').toString().trim().toUpperCase();
+    if (['MEDICO', 'DOCTOR', 'DOCTORA'].includes(value)) return 'Doctora';
+    if (value === 'ASISTENTE') return 'Asistente';
+    if (value === 'PACIENTE') return 'Paciente';
+    return rol;
   }
 
   _parseDiasSemana(value) {

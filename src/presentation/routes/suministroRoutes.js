@@ -1,14 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const SuministroController = require('../controllers/SuministroController');
-const authMiddleware = require('../../infrastructure/services/AuthMiddleware');
+const { controllers, authMiddleware } = require('../../main/container');
+
+const SuministroController = controllers.suministroController;
 
 router.use(authMiddleware);
 
-router.get('/', SuministroController.listar);
-router.get('/inventario', SuministroController.inventario);
-router.get('/alertas', SuministroController.alertas);
-router.post('/', SuministroController.crear);
-router.put('/:id', SuministroController.modificar);
+router.get('/', SuministroController.listar.bind(SuministroController));
+router.get('/inventario', SuministroController.inventario.bind(SuministroController));
+router.get('/alertas', SuministroController.alertas.bind(SuministroController));
+router.post('/', SuministroController.crear.bind(SuministroController));
+router.put('/:id', SuministroController.modificar.bind(SuministroController));
 
 module.exports = router;

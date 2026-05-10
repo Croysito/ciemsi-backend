@@ -1,13 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const AuthController = require('../controllers/AuthController');
-const authMiddleware = require('../../infrastructure/services/AuthMiddleware');
+const { controllers, authMiddleware } = require('../../main/container');
+
+const AuthController = controllers.authController;
 
 // Rutas públicas (no requieren token)
-router.post('/login', AuthController.iniciarSesion);
-router.post('/recuperar-contrasena', AuthController.recuperarContrasena);
+router.post('/login', AuthController.iniciarSesion.bind(AuthController));
+router.post('/recuperar-contrasena', AuthController.recuperarContrasena.bind(AuthController));
 
 // Rutas protegidas (requieren token)
-router.post('/logout', authMiddleware, AuthController.cerrarSesion);
+router.post('/logout', authMiddleware, AuthController.cerrarSesion.bind(AuthController));
 
 module.exports = router;

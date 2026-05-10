@@ -1,9 +1,8 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-
 class IniciarSesion {
-  constructor(usuarioRepository) {
+  constructor(usuarioRepository, hashService, tokenService) {
     this.usuarioRepository = usuarioRepository;
+    this.hashService = hashService;
+    this.tokenService = tokenService;
   }
 
   async execute({ email, password }) {
@@ -19,14 +18,13 @@ class IniciarSesion {
     }
 
     // 3. Verificar la contraseña
-    const passwordValida = await bcrypt.compare(password, usuario.password);
+    const passwordValida = await this.hashService.comparar(password, usuario.password);
     if (!passwordValida) {
       throw new Error('Credenciales incorrectas');
     }
 
     // 4. Generar el token JWT
-   const token = jwt.sign(
-  {
+   const token = this.tokenService.generarToken({
     id: usuario.id,
     email: usuario.email,
     nombre: usuario.nombre,
@@ -34,10 +32,7 @@ class IniciarSesion {
     rol: usuario.rol.nombreRol,
     ciudadId: usuario.ciudad ? usuario.ciudad.id : null,
     ciudadNombre: usuario.ciudad ? usuario.ciudad.nombreCiudad : null,
-  },
-  process.env.JWT_SECRET,
-  { expiresIn: process.env.JWT_EXPIRES_IN }
-);
+  });
 
 return {
   token,

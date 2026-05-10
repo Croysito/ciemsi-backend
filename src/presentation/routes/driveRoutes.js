@@ -1,21 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const DriveController = require('../controllers/DriveController');
-const authMiddleware = require('../../infrastructure/services/AuthMiddleware');
+const { controllers, authMiddleware } = require('../../main/container');
+
+const DriveController = controllers.driveController;
 
 router.use(authMiddleware);
 
 // Obtener URL de autorización Google
-router.get('/auth-url', DriveController.obtenerAuthUrl);
+router.get('/auth-url', DriveController.obtenerAuthUrl.bind(DriveController));
 
 // Intercambiar código por tokens
-router.post('/tokens', DriveController.intercambiarTokens);
+router.post('/tokens', DriveController.intercambiarTokens.bind(DriveController));
 
 // Subir archivo a Drive y guardar link
 router.post(
   '/upload/:notaId',
   DriveController.getUploadMiddleware(),
-  DriveController.subirArchivo
+  DriveController.subirArchivo.bind(DriveController)
 );
 
 module.exports = router;

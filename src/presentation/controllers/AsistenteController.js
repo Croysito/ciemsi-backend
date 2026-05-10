@@ -1,19 +1,21 @@
-const CrearAsistente = require('../../application/use-cases/asistentes/CrearAsistente');
-const ListarAsistentes = require('../../application/use-cases/asistentes/ListarAsistentes');
-const ModificarAsistente = require('../../application/use-cases/asistentes/ModificarAsistente');
-const CambiarEstadoAsistente = require('../../application/use-cases/asistentes/CambiarEstadoAsistente');
-const CambiarPassword = require('../../application/use-cases/auth/CambiarPassword');
-const UsuarioRepository = require('../../infrastructure/repositories/UsuarioRepository');
-const CiudadRepository = require('../../infrastructure/repositories/CiudadRepository');
-
-const usuarioRepository = new UsuarioRepository();
-const ciudadRepository = new CiudadRepository();
-
 class AsistenteController {
+  constructor({
+    listarAsistentes,
+    crearAsistente,
+    modificarAsistente,
+    cambiarEstadoAsistente,
+    cambiarPassword,
+  }) {
+    this.listarAsistentes = listarAsistentes;
+    this.crearAsistente = crearAsistente;
+    this.modificarAsistente = modificarAsistente;
+    this.cambiarEstadoAsistente = cambiarEstadoAsistente;
+    this.cambiarPasswordUseCase = cambiarPassword;
+  }
+
   async listar(req, res) {
     try {
-      const useCase = new ListarAsistentes(usuarioRepository);
-      const asistentes = await useCase.execute();
+      const asistentes = await this.listarAsistentes.execute();
       return res.status(200).json(asistentes);
     } catch (error) {
       return res.status(500).json({ mensaje: error.message });
@@ -25,12 +27,12 @@ class AsistenteController {
       const { nombre, apellido, email, ci, ciudadId } = req.body;
       if (!nombre || !apellido || !email || !ci || !ciudadId) {
         return res.status(400).json({
-          mensaje: 'Nombre, apellido, email, CI y ciudad son requeridos'
+          mensaje: 'Nombre, apellido, email, CI y ciudad son requeridos',
         });
       }
-      const useCase = new CrearAsistente(usuarioRepository, ciudadRepository);
-      const resultado = await useCase.execute({
-        nombre, apellido, email, ci, ciudadId
+
+      const resultado = await this.crearAsistente.execute({
+        nombre, apellido, email, ci, ciudadId,
       });
       return res.status(201).json(resultado);
     } catch (error) {
@@ -44,12 +46,12 @@ class AsistenteController {
       const { nombre, apellido, email, ciudadId } = req.body;
       if (!nombre || !apellido || !email || !ciudadId) {
         return res.status(400).json({
-          mensaje: 'Nombre, apellido, email y ciudad son requeridos'
+          mensaje: 'Nombre, apellido, email y ciudad son requeridos',
         });
       }
-      const useCase = new ModificarAsistente(usuarioRepository, ciudadRepository);
-      const resultado = await useCase.execute(parseInt(id), {
-        nombre, apellido, email, ciudadId
+
+      const resultado = await this.modificarAsistente.execute(parseInt(id), {
+        nombre, apellido, email, ciudadId,
       });
       return res.status(200).json(resultado);
     } catch (error) {
@@ -61,8 +63,7 @@ class AsistenteController {
     try {
       const { id } = req.params;
       const { estado } = req.body;
-      const useCase = new CambiarEstadoAsistente(usuarioRepository);
-      const resultado = await useCase.execute(parseInt(id), estado);
+      const resultado = await this.cambiarEstadoAsistente.execute(parseInt(id), estado);
       return res.status(200).json(resultado);
     } catch (error) {
       return res.status(400).json({ mensaje: error.message });
@@ -75,12 +76,12 @@ class AsistenteController {
       const { passwordActual, passwordNuevo } = req.body;
       if (!passwordActual || !passwordNuevo) {
         return res.status(400).json({
-          mensaje: 'Password actual y nuevo son requeridos'
+          mensaje: 'Password actual y nuevo son requeridos',
         });
       }
-      const useCase = new CambiarPassword(usuarioRepository);
-      const resultado = await useCase.execute({
-        usuarioId, passwordActual, passwordNuevo
+
+      const resultado = await this.cambiarPasswordUseCase.execute({
+        usuarioId, passwordActual, passwordNuevo,
       });
       return res.status(200).json(resultado);
     } catch (error) {
@@ -89,4 +90,4 @@ class AsistenteController {
   }
 }
 
-module.exports = new AsistenteController();
+module.exports = AsistenteController;

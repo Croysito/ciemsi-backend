@@ -1,11 +1,10 @@
-const IniciarSesion = require('../../application/use-cases/auth/IniciarSesion');
-const RecuperarContrasena = require('../../application/use-cases/auth/RecuperarContrasena');
-const CerrarSesion = require('../../application/use-cases/auth/CerrarSesion');
-const UsuarioRepository = require('../../infrastructure/repositories/UsuarioRepository');
-
-const usuarioRepository = new UsuarioRepository();
-
 class AuthController {
+  constructor({ iniciarSesion, recuperarContrasena, cerrarSesion }) {
+    this.iniciarSesionUseCase = iniciarSesion;
+    this.recuperarContrasenaUseCase = recuperarContrasena;
+    this.cerrarSesionUseCase = cerrarSesion;
+  }
+
   async iniciarSesion(req, res) {
     try {
       const { email, password } = req.body;
@@ -14,9 +13,7 @@ class AuthController {
         return res.status(400).json({ mensaje: 'Email y contraseña son requeridos' });
       }
 
-      const useCase = new IniciarSesion(usuarioRepository);
-      const resultado = await useCase.execute({ email, password });
-
+      const resultado = await this.iniciarSesionUseCase.execute({ email, password });
       return res.status(200).json(resultado);
     } catch (error) {
       return res.status(401).json({ mensaje: error.message });
@@ -31,9 +28,7 @@ class AuthController {
         return res.status(400).json({ mensaje: 'El email es requerido' });
       }
 
-      const useCase = new RecuperarContrasena(usuarioRepository);
-      const resultado = await useCase.execute({ email });
-
+      const resultado = await this.recuperarContrasenaUseCase.execute({ email });
       return res.status(200).json(resultado);
     } catch (error) {
       return res.status(400).json({ mensaje: error.message });
@@ -42,8 +37,7 @@ class AuthController {
 
   cerrarSesion(req, res) {
     try {
-      const useCase = new CerrarSesion();
-      const resultado = useCase.execute();
+      const resultado = this.cerrarSesionUseCase.execute();
       return res.status(200).json(resultado);
     } catch (error) {
       return res.status(500).json({ mensaje: error.message });
@@ -51,4 +45,4 @@ class AuthController {
   }
 }
 
-module.exports = new AuthController();
+module.exports = AuthController;

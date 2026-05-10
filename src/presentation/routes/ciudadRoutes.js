@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const CiudadController = require('../controllers/CiudadController');
-const authMiddleware = require('../../infrastructure/services/AuthMiddleware');
+const { controllers, authMiddleware } = require('../../main/container');
+
+const CiudadController = controllers.ciudadController;
 
 router.use(authMiddleware);
 
-router.get('/', CiudadController.listar);
+router.get('/', CiudadController.listar.bind(CiudadController));
 
 module.exports = router;

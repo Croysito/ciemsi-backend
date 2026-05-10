@@ -1,8 +1,7 @@
-const bcrypt = require('bcryptjs');
-
 class CambiarPassword {
-  constructor(usuarioRepository) {
+  constructor(usuarioRepository, hashService) {
     this.usuarioRepository = usuarioRepository;
+    this.hashService = hashService;
   }
 
   async execute({ usuarioId, passwordActual, passwordNuevo }) {
@@ -13,13 +12,13 @@ class CambiarPassword {
     }
 
     // 2. Verificar password actual
-    const passwordValida = await bcrypt.compare(passwordActual, usuario.password);
+    const passwordValida = await this.hashService.comparar(passwordActual, usuario.password);
     if (!passwordValida) {
       throw new Error('La contraseña actual es incorrecta');
     }
 
     // 3. Hashear nueva password
-    const hashedPassword = await bcrypt.hash(passwordNuevo, 10);
+    const hashedPassword = await this.hashService.hashear(passwordNuevo);
 
     // 4. Actualizar
     await this.usuarioRepository.updatePassword(usuarioId, hashedPassword);

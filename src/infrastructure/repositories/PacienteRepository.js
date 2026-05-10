@@ -4,7 +4,6 @@ const Ciudad = require('../../domain/entities/Ciudad');
 const Usuario = require('../../domain/entities/Usuario');
 const Rol = require('../../domain/entities/Rol');
 const pool = require('../database/db');
-const bcrypt = require('bcryptjs');
 
 class PacienteRepository extends IPacienteRepository {
   async findAll() {
@@ -108,18 +107,13 @@ class PacienteRepository extends IPacienteRepository {
     return rows[0].id;
   }
 
-  async createProvisional({ nombreCompleto, telefono, ciudadId }) {
+  async createProvisional({ nombreCompleto, telefono, ciudadId, ci, email, password }) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
 
       const nombre = nombreCompleto.trim();
       const apellido = '';
-      const uniqueSuffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
-      const ci = `PROV-${uniqueSuffix}`;
-      const email = `provisional.${uniqueSuffix}@ciemsi.local`;
-      const password = await bcrypt.hash(ci, 10);
-
       const usuarioResult = await client.query(
         `INSERT INTO usuarios (nombre, apellido, email, password, rol_id, ciudad_id, estado)
          VALUES ($1, $2, $3, $4, 3, $5, true)
@@ -184,7 +178,7 @@ class PacienteRepository extends IPacienteRepository {
       [ci, edad, telefono, fechaNacimiento, id]
     );
   }
-  async completar(id, { ci, nombre, apellido, email, edad, telefono, fechaNacimiento, ciudadId }) {
+  async completar(id, { ci, nombre, apellido, email, edad, telefono, fechaNacimiento, ciudadId, password }) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -195,16 +189,13 @@ class PacienteRepository extends IPacienteRepository {
     );
     const usuarioId = rows[0].usuario_id;
 
-    // Hash del CI como nueva contraseña
-    const passwordHash = await bcrypt.hash(ci, 10);
-
     await client.query(
       `UPDATE usuarios
        SET nombre = $1, apellido = $2, email = $3,
            password = $4, ciudad_id = $5,
            estado = true, updated_at = NOW()
        WHERE id = $6`,
-      [nombre, apellido, email, passwordHash, ciudadId, usuarioId]
+      [nombre, apellido, email, password, ciudadId, usuarioId]
     );
 
     await client.query(

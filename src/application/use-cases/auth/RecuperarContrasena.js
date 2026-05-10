@@ -1,47 +1,32 @@
-const bcrypt = require('bcryptjs');
-const nodemailer = require('nodemailer');
-
 class RecuperarContrasena {
-  constructor(usuarioRepository) {
+  constructor(usuarioRepository, hashService, emailService) {
     this.usuarioRepository = usuarioRepository;
+    this.hashService = hashService;
+    this.emailService = emailService;
   }
 
   async execute({ email }) {
-    // 1. Verificar que el usuario existe
     const usuario = await this.usuarioRepository.findByEmail(email);
     if (!usuario) {
       throw new Error('No existe una cuenta con ese email');
     }
 
-    // 2. Generar contraseña temporal
     const contrasenaTemporal = Math.random().toString(36).slice(-8);
-
-    // 3. Hashear y guardar la nueva contraseña
-    const hashedPassword = await bcrypt.hash(contrasenaTemporal, 10);
+    const hashedPassword = await this.hashService.hashear(contrasenaTemporal);
     await this.usuarioRepository.updatePassword(usuario.id, hashedPassword);
 
-    // 4. Enviar email con la contraseña temporal
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+    await this.emailService.enviar({
       to: email,
-      subject: 'Recuperación de contraseña - CIEMSI',
+      subject: 'Recuperacion de contrasena - CIEMSI',
       html: `
-        <h3>Recuperación de contraseña</h3>
+        <h3>Recuperacion de contrasena</h3>
         <p>Hola <b>${usuario.nombre}</b>,</p>
-        <p>Tu contraseña temporal es: <b>${contrasenaTemporal}</b></p>
-        <p>Por seguridad, cámbiala después de iniciar sesión.</p>
+        <p>Tu contrasena temporal es: <b>${contrasenaTemporal}</b></p>
+        <p>Por seguridad, cambiala despues de iniciar sesion.</p>
       `,
     });
 
-    return { mensaje: 'Se envió una contraseña temporal a tu correo' };
+    return { mensaje: 'Se envio una contrasena temporal a tu correo' };
   }
 }
 
