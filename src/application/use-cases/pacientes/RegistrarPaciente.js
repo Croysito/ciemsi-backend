@@ -7,7 +7,7 @@ class RegistrarPaciente {
     this.hashService = hashService;
   }
 
-  async execute({ ci, nombre, apellido, email, edad, telefono, fechaNacimiento, ciudadId }) {
+  async execute({ ci, nombre, apellido, email, telefono, fechaNacimiento, ciudadId }) {
     // 1. Verificar CI duplicado
     const pacienteExistente = await this.pacienteRepository.findByCi(ci);
     if (pacienteExistente) {
@@ -44,7 +44,6 @@ class RegistrarPaciente {
     // 6. Crear paciente
     const pacienteId = await this.pacienteRepository.create({
       ci,
-      edad,
       telefono,
       fechaNacimiento,
       usuarioId,

@@ -46,7 +46,7 @@ class PacienteController {
 
   async registrar(req, res) {
     try {
-      const { ci, nombre, apellido, email, edad, telefono, fechaNacimiento, ciudadId } = req.body;
+      const { ci, nombre, apellido, email, telefono, fechaNacimiento, ciudadId } = req.body;
 
       if (!ci || !nombre || !apellido || !email || !ciudadId) {
         return res.status(400).json({
@@ -55,7 +55,7 @@ class PacienteController {
       }
 
       const resultado = await this.registrarPaciente.execute({
-        ci, nombre, apellido, email, edad, telefono, fechaNacimiento, ciudadId,
+        ci, nombre, apellido, email, telefono, fechaNacimiento, ciudadId,
       });
       return res.status(201).json(resultado);
     } catch (error) {
@@ -80,13 +80,12 @@ class PacienteController {
 
   async completar(req, res) {
     try {
-      const { ci, nombre, apellido, email, edad, telefono, fechaNacimiento, ciudadId } = req.body;
+      const { ci, nombre, apellido, email, telefono, fechaNacimiento, ciudadId } = req.body;
       const resultado = await this.completarPaciente.execute(parseInt(req.params.id), {
         ci,
         nombre,
         apellido,
         email,
-        edad: edad ? parseInt(edad) : null,
         telefono,
         fechaNacimiento: fechaNacimiento || null,
         ciudadId,
@@ -101,14 +100,14 @@ class PacienteController {
   async modificar(req, res) {
     try {
       const { id } = req.params;
-      const { ci, nombre, apellido, email, edad, telefono, fechaNacimiento, ciudadId } = req.body;
+      const { ci, nombre, apellido, email, telefono, fechaNacimiento, ciudadId } = req.body;
 
       if (!ci || !ciudadId) {
         return res.status(400).json({ mensaje: 'CI y ciudad son requeridos' });
       }
 
       const resultado = await this.modificarPaciente.execute(parseInt(id), {
-        ci, nombre, apellido, email, edad, telefono, fechaNacimiento, ciudadId,
+        ci, nombre, apellido, email, telefono, fechaNacimiento, ciudadId,
       });
       return res.status(200).json(resultado);
     } catch (error) {

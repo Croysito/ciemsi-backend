@@ -1,8 +1,7 @@
 class Paciente {
-  constructor({ id, ci, edad, telefono, fechaNacimiento, usuario }) {
+  constructor({ id, ci, telefono, fechaNacimiento, usuario }) {
     this.id = id;
     this.ci = ci;
-    this.edad = edad;
     this.telefono = telefono;
     this.fechaNacimiento = fechaNacimiento;
     this.usuario = usuario;
@@ -14,6 +13,27 @@ class Paciente {
 
   get ciudad() {
     return this.usuario.ciudad;
+  }
+
+  get edad() {
+    if (!this.fechaNacimiento) return null;
+    const hoy = new Date();
+    const nac = new Date(this.fechaNacimiento);
+    let años = hoy.getFullYear() - nac.getFullYear();
+    const diffMes = hoy.getMonth() - nac.getMonth();
+    if (diffMes < 0 || (diffMes === 0 && hoy.getDate() < nac.getDate())) años--;
+    return años;
+  }
+
+  toJSON() {
+    return {
+      id: this.id,
+      ci: this.ci,
+      telefono: this.telefono,
+      fechaNacimiento: this.fechaNacimiento,
+      edad: this.edad,
+      usuario: this.usuario,
+    };
   }
 }
 

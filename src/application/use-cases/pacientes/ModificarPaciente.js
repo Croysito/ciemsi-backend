@@ -5,7 +5,7 @@ class ModificarPaciente {
     this.usuarioRepository = usuarioRepository;
   }
 
-  async execute(id, { ci, nombre, apellido, email, edad, telefono, fechaNacimiento, ciudadId }) {
+  async execute(id, { ci, nombre, apellido, email, telefono, fechaNacimiento, ciudadId }) {
     // 1. Verificar que el paciente existe
     const paciente = await this.pacienteRepository.findById(id);
     if (!paciente) {
@@ -40,7 +40,6 @@ class ModificarPaciente {
       nombre,
       apellido,
       email,
-      edad,
       telefono,
       fechaNacimiento,
       ciudadId,
