@@ -49,7 +49,7 @@ class SuministroRepository extends ISuministroRepository {
        ORDER BY nombre_suministro`,
       [ciudadId]
     );
-    return rows;
+    return rows.map(r => this._mapInventarioRow(r));
   }
 
   async getStockBajo(ciudadId) {
@@ -59,7 +59,24 @@ class SuministroRepository extends ISuministroRepository {
        ORDER BY saldo ASC`,
       [ciudadId]
     );
-    return rows;
+    return rows.map(r => this._mapInventarioRow(r));
+  }
+
+  _mapInventarioRow(r) {
+    return {
+      id: parseInt(r.id) || 0,
+      nombre_suministro: r.nombre_suministro,
+      unidad_medida: r.unidad_medida,
+      marca: r.marca,
+      tipo: r.tipo,
+      umbral: parseInt(r.umbral) || 5,
+      ciudad_id: parseInt(r.ciudad_id) || 0,
+      nombre_ciudad: r.nombre_ciudad,
+      total_compras: parseInt(r.total_compras) || 0,
+      total_salidas: parseInt(r.total_salidas) || 0,
+      saldo: parseInt(r.saldo) || 0,
+      stock_bajo: r.stock_bajo === true || r.stock_bajo === 'true',
+    };
   }
 
   async getProximosAVencer(dias) {
@@ -72,7 +89,7 @@ class SuministroRepository extends ISuministroRepository {
        INNER JOIN compras c ON cs.compra_id = c.id
        INNER JOIN ciudades ci ON c.ciudad_id = ci.id
        WHERE cs.fecha_vencimiento IS NOT NULL
-         AND cs.fecha_vencimiento <= CURRENT_DATE + $1
+         AND cs.fecha_vencimiento <= CURRENT_DATE + ($1::int * INTERVAL '1 day')
          AND cs.fecha_vencimiento >= CURRENT_DATE
        ORDER BY cs.fecha_vencimiento ASC`,
       [dias]

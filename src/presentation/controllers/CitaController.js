@@ -2,12 +2,15 @@ const ReservarCita = require('../../application/use-cases/citas/ReservarCita');
 const ModificarCita = require('../../application/use-cases/citas/ModificarCita');
 const CambiarEstadoCita = require('../../application/use-cases/citas/CambiarEstadoCita');
 const ObtenerCitas = require('../../application/use-cases/citas/ObtenerCitas');
+const CrearDeudaDesdeCita = require('../../application/use-cases/pagos/CrearDeudaDesdeCita');
 
 class CitaController {
   constructor({
     citaRepository,
     agendaRepository,
     pacienteRepository,
+    deudaRepository,
+    tratamientoRepository,
     notificacionService,
   }) {
     this.citaRepository = citaRepository;
@@ -17,6 +20,7 @@ class CitaController {
     this.reservarCita = new ReservarCita(citaRepository, agendaRepository, pacienteRepository);
     this.modificarCita = new ModificarCita(citaRepository);
     this.cambiarEstadoCita = new CambiarEstadoCita(citaRepository);
+    this.crearDeudaDesdeCita = new CrearDeudaDesdeCita(deudaRepository, tratamientoRepository);
   }
 
   async listar(req, res) {
@@ -124,6 +128,7 @@ class CitaController {
           break;
         case 'COMPLETADA':
           await this.notificacionService.citaCompletada(cita);
+          await this.crearDeudaDesdeCita.execute(parseInt(id)).catch(() => {});
           break;
       }
       return res.status(200).json(resultado);

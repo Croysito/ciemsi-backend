@@ -16,6 +16,10 @@ const suministroRoutes = require('./presentation/routes/suministroRoutes');
 const compraRoutes = require('./presentation/routes/compraRoutes');
 const tratamientoRoutes = require('./presentation/routes/tratamientoRoutes');
 const recetaRoutes = require('./presentation/routes/recetaRoutes');
+const ingresoRoutes = require('./presentation/routes/ingresoRoutes');
+const deudaRoutes = require('./presentation/routes/deudaRoutes');
+const productoRoutes = require('./presentation/routes/productoRoutes');
+const trasladoRoutes = require('./presentation/routes/trasladoRoutes');
 
 
 const app = express();
@@ -37,6 +41,10 @@ app.use('/api/suministros', suministroRoutes);
 app.use('/api/compras', compraRoutes);
 app.use('/api/tratamientos', tratamientoRoutes);
 app.use('/api/recetas', recetaRoutes);
+app.use('/api/ingresos', ingresoRoutes);
+app.use('/api/deudas', deudaRoutes);
+app.use('/api/productos', productoRoutes);
+app.use('/api/traslados', trasladoRoutes);
 
 // Servir archivos estáticos (PDFs)
 app.use('/public', express.static('public'));
