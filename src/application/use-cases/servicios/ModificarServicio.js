@@ -3,7 +3,7 @@ class ModificarServicio {
     this.servicioRepository = servicioRepository;
   }
 
-  async execute(id, { nombreServicio, tiempoMin, estado }) {
+  async execute(id, { nombreServicio, tiempoMin, estado, roles }) {
     const servicio = await this.servicioRepository.findById(id);
     if (!servicio) {
       throw new Error('Servicio no encontrado');
@@ -12,6 +12,7 @@ class ModificarServicio {
       nombreServicio: nombreServicio || servicio.nombreServicio,
       tiempoMin: tiempoMin || servicio.tiempoMin,
       estado: estado !== undefined ? estado : servicio.estado,
+      roles,
     });
     return { mensaje: 'Servicio actualizado correctamente' };
   }

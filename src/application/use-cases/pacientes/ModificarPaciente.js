@@ -1,11 +1,12 @@
 class ModificarPaciente {
-  constructor(pacienteRepository, ciudadRepository, usuarioRepository) {
+  constructor(pacienteRepository, ciudadRepository, usuarioRepository, hashService) {
     this.pacienteRepository = pacienteRepository;
     this.ciudadRepository = ciudadRepository;
     this.usuarioRepository = usuarioRepository;
+    this.hashService = hashService;
   }
 
-  async execute(id, { ci, nombre, apellido, email, telefono, fechaNacimiento, ciudadId }) {
+  async execute(id, { ci, nombre, apellido, email, telefono, fechaNacimiento, genero, ciudadId }) {
     // 1. Verificar que el paciente existe
     const paciente = await this.pacienteRepository.findById(id);
     if (!paciente) {
@@ -19,8 +20,10 @@ class ModificarPaciente {
       throw new Error('Ciudad no válida');
     }
 
+    const ciCambio = ci !== paciente.ci;
+
     // 3. Verificar CI duplicado si cambió
-    if (ci !== paciente.ci) {
+    if (ciCambio) {
       const pacienteConCi = await this.pacienteRepository.findByCi(ci);
       if (pacienteConCi) {
         throw new Error('Ya existe un paciente con ese CI');
@@ -42,8 +45,15 @@ class ModificarPaciente {
       email,
       telefono,
       fechaNacimiento,
+      genero: genero || null,
       ciudadId,
     });
+
+    // 5. Si el CI cambió, actualizar la contraseña del usuario al nuevo CI
+    if (ciCambio) {
+      const passwordHash = await this.hashService.hashear(ci);
+      await this.usuarioRepository.updatePassword(paciente.usuario.id, passwordHash);
+    }
 
     return { mensaje: 'Paciente actualizado correctamente' };
   }

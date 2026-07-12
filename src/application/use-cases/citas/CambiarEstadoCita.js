@@ -12,19 +12,22 @@ class CambiarEstadoCita {
     // Validar transiciones de estado permitidas
     const transicionesPermitidas = {
       'Doctora': {
-        'PENDIENTE': ['CONFIRMADA', 'CANCELADA'],
-        'MODIFICADA': ['CONFIRMADA', 'CANCELADA'],
-        'CONFIRMADA': ['COMPLETADA', 'CANCELADA'],
+        'PENDIENTE':      ['CONFIRMADA', 'CANCELADA'],
+        'PENDIENTE_PAGO': ['CONFIRMADA', 'CANCELADA'],
+        'MODIFICADA':     ['CONFIRMADA', 'CANCELADA'],
+        'CONFIRMADA':     ['COMPLETADA', 'CANCELADA'],
       },
       'Asistente': {
-        'PENDIENTE': ['CONFIRMADA', 'CANCELADA'],
-        'MODIFICADA': ['CONFIRMADA', 'CANCELADA'],
-        'CONFIRMADA': ['CANCELADA'],
+        'PENDIENTE':      ['CONFIRMADA', 'CANCELADA'],
+        'PENDIENTE_PAGO': ['CONFIRMADA', 'CANCELADA'],
+        'MODIFICADA':     ['CONFIRMADA', 'CANCELADA'],
+        'CONFIRMADA':     ['CANCELADA'],
       },
       'Paciente': {
-        'MODIFICADA': ['CONFIRMADA', 'CANCELADA'],
-        'CONFIRMADA': ['CANCELADA'],
-        'PENDIENTE': ['CANCELADA'],
+        'PENDIENTE_PAGO': ['CANCELADA'],
+        'MODIFICADA':     ['CONFIRMADA', 'CANCELADA'],
+        'CONFIRMADA':     ['CANCELADA'],
+        'PENDIENTE':      ['CANCELADA'],
       },
     };
 

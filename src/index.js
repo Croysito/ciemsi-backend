@@ -20,6 +20,8 @@ const ingresoRoutes = require('./presentation/routes/ingresoRoutes');
 const deudaRoutes = require('./presentation/routes/deudaRoutes');
 const productoRoutes = require('./presentation/routes/productoRoutes');
 const trasladoRoutes = require('./presentation/routes/trasladoRoutes');
+const cuentaRoutes   = require('./presentation/routes/cuentaRoutes');
+const chatbotRoutes  = require('./presentation/routes/chatbotRoutes');
 
 
 const app = express();
@@ -45,6 +47,8 @@ app.use('/api/ingresos', ingresoRoutes);
 app.use('/api/deudas', deudaRoutes);
 app.use('/api/productos', productoRoutes);
 app.use('/api/traslados', trasladoRoutes);
+app.use('/api/cuentas',   cuentaRoutes);
+app.use('/api/chatbot',   chatbotRoutes);
 
 // Servir archivos estáticos (PDFs)
 app.use('/public', express.static('public'));

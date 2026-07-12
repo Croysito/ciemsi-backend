@@ -12,6 +12,15 @@ class IngresoRepository extends IIngresoRepository {
     return rows[0].id;
   }
 
+  async createAdelantoCita({ pacienteId, ciudadId, monto, metodo, citaId, createdBy }) {
+    const { rows } = await pool.query(
+      `INSERT INTO ingresos (paciente_id, ciudad_id, tipo, monto, metodo, notas, created_by)
+       VALUES ($1, $2, 'adelanto_cita', $3, $4, $5, $6) RETURNING id`,
+      [pacienteId, ciudadId, monto, metodo, `Adelanto cita #${citaId}`, createdBy]
+    );
+    return rows[0].id;
+  }
+
   async createVentaProducto({ pacienteId, ciudadId, monto, metodo, notas, createdBy }) {
     const { rows } = await pool.query(
       `INSERT INTO ingresos (paciente_id, ciudad_id, tipo, monto, metodo, notas, created_by)

@@ -1,5 +1,8 @@
 const AgendaRepository = require('../infrastructure/repositories/AgendaRepository');
 const CompraRepository = require('../infrastructure/repositories/CompraRepository');
+const MovimientoExtraRepository = require('../infrastructure/repositories/MovimientoExtraRepository');
+const SaldoInicialRepository    = require('../infrastructure/repositories/SaldoInicialRepository');
+const CuentaRepository          = require('../infrastructure/repositories/CuentaRepository');
 const DeudaRepository = require('../infrastructure/repositories/DeudaRepository');
 const IngresoRepository = require('../infrastructure/repositories/IngresoRepository');
 const ProductoRepository = require('../infrastructure/repositories/ProductoRepository');
@@ -12,6 +15,9 @@ const ServicioRepository = require('../infrastructure/repositories/ServicioRepos
 const SuministroRepository = require('../infrastructure/repositories/SuministroRepository');
 const TrasladoRepository = require('../infrastructure/repositories/TrasladoRepository');
 const TratamientoRepository = require('../infrastructure/repositories/TratamientoRepository');
+const SesionAsistenteRepository = require('../infrastructure/repositories/SesionAsistenteRepository');
+const TraspasoRepository        = require('../infrastructure/repositories/TraspasoRepository');
+const ConfigClinicaRepository   = require('../infrastructure/repositories/ConfigClinicaRepository');
 const UsuarioRepository = require('../infrastructure/repositories/UsuarioRepository');
 
 const EmailService = require('../infrastructure/services/EmailService');
@@ -39,6 +45,7 @@ const RegistrarPaciente = require('../application/use-cases/pacientes/RegistrarP
 const RegistrarPacienteProvisional = require('../application/use-cases/pacientes/RegistrarPacienteProvisional');
 
 const AsistenteController = require('../presentation/controllers/AsistenteController');
+const ChatbotController   = require('../presentation/controllers/ChatbotController');
 const DeudaController = require('../presentation/controllers/DeudaController');
 const IngresoController = require('../presentation/controllers/IngresoController');
 const ProductoController = require('../presentation/controllers/ProductoController');
@@ -55,6 +62,7 @@ const ServicioController = require('../presentation/controllers/ServicioControll
 const SuministroController = require('../presentation/controllers/SuministroController');
 const TrasladoController = require('../presentation/controllers/TrasladoController');
 const TratamientoController = require('../presentation/controllers/TratamientoController');
+const CuentaController = require('../presentation/controllers/CuentaController');
 
 const repositories = {
   agendaRepository: new AgendaRepository(),
@@ -72,6 +80,12 @@ const repositories = {
   trasladoRepository: new TrasladoRepository(),
   tratamientoRepository: new TratamientoRepository(),
   usuarioRepository: new UsuarioRepository(),
+  movimientoExtraRepository:    new MovimientoExtraRepository(),
+  saldoInicialRepository:       new SaldoInicialRepository(),
+  cuentaRepository:             new CuentaRepository(),
+  sesionAsistenteRepository:    new SesionAsistenteRepository(),
+  traspasoRepository:           new TraspasoRepository(),
+  configClinicaRepository:      new ConfigClinicaRepository(),
 };
 
 const services = {
@@ -108,7 +122,8 @@ const pacienteUseCases = {
   modificarPaciente: new ModificarPaciente(
     repositories.pacienteRepository,
     repositories.ciudadRepository,
-    repositories.usuarioRepository
+    repositories.usuarioRepository,
+    services.hashService
   ),
 };
 
@@ -153,7 +168,7 @@ module.exports = {
     agendaController: new AgendaController(repositories),
     asistenteController: new AsistenteController(asistenteUseCases),
     authController: new AuthController(authUseCases),
-    citaController: new CitaController({ ...repositories, ...services, deudaRepository: repositories.deudaRepository, tratamientoRepository: repositories.tratamientoRepository }),
+    citaController: new CitaController({ ...repositories, ...services }),
     ciudadController: new CiudadController(ciudadUseCases),
     compraController: new CompraController(repositories),
     deudaController: new DeudaController(repositories),
@@ -167,5 +182,7 @@ module.exports = {
     suministroController: new SuministroController(repositories),
     trasladoController: new TrasladoController(repositories),
     tratamientoController: new TratamientoController({ ...repositories, ...services }),
+    cuentaController:    new CuentaController({ ...repositories }),
+    chatbotController:   new ChatbotController(repositories),
   },
 };

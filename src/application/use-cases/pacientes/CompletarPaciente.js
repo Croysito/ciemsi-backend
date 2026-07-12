@@ -6,7 +6,7 @@ class CompletarPaciente {
     this.hashService = hashService;
   }
 
-  async execute(id, { ci, nombre, apellido, email, telefono, fechaNacimiento, ciudadId }) {
+  async execute(id, { ci, nombre, apellido, email, telefono, fechaNacimiento, genero, ciudadId }) {
     const paciente = await this.pacienteRepository.findById(id);
     if (!paciente) throw new Error('Paciente no encontrado');
 
@@ -36,7 +36,7 @@ class CompletarPaciente {
     const password = await this.hashService.hashear(ci);
 
     await this.pacienteRepository.completar(id, {
-      ci, nombre, apellido, email, telefono, fechaNacimiento, ciudadId, password,
+      ci, nombre, apellido, email, telefono, fechaNacimiento, genero: genero || null, ciudadId, password,
     });
 
     return { mensaje: 'Datos del paciente completados correctamente' };

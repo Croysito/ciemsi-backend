@@ -1,9 +1,10 @@
 class Paciente {
-  constructor({ id, ci, telefono, fechaNacimiento, usuario }) {
+  constructor({ id, ci, telefono, fechaNacimiento, genero, usuario }) {
     this.id = id;
     this.ci = ci;
     this.telefono = telefono;
     this.fechaNacimiento = fechaNacimiento;
+    this.genero = genero ?? null;
     this.usuario = usuario;
   }
 
@@ -31,6 +32,7 @@ class Paciente {
       ci: this.ci,
       telefono: this.telefono,
       fechaNacimiento: this.fechaNacimiento,
+      genero: this.genero,
       edad: this.edad,
       usuario: this.usuario,
     };

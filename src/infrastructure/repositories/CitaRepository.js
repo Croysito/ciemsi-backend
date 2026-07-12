@@ -62,6 +62,20 @@ class CitaRepository extends ICitaRepository {
     );
   }
 
+  async updateComprobante(id, comprobantePath) {
+    await pool.query(
+      'UPDATE citas_medicas SET comprobante_path = $1, updated_at = NOW() WHERE id = $2',
+      [comprobantePath, id]
+    );
+  }
+
+  async updateAdelanto(id, { monto, metodo }) {
+    await pool.query(
+      `UPDATE citas_medicas SET adelanto_monto = $1, adelanto_metodo = $2, updated_at = NOW() WHERE id = $3`,
+      [monto, metodo, id]
+    );
+  }
+
   async update(id, { fecha, hora, servicioId, notas }) {
     await pool.query(
       `UPDATE citas_medicas SET fecha = $1, hora = $2, servicio_id = $3,
@@ -73,6 +87,7 @@ class CitaRepository extends ICitaRepository {
   _baseQuery() {
     return `
       SELECT c.id, c.fecha, c.hora, c.estado, c.notas, c.created_at,
+             c.adelanto_monto, c.adelanto_metodo, c.comprobante_path,
              p.id as paciente_id, p.ci,
              u.id as usuario_id, u.nombre, u.apellido, u.email, u.estado as usuario_estado,
              r.id as rol_id, r.nombre_rol,
@@ -130,6 +145,9 @@ class CitaRepository extends ICitaRepository {
       ciudad,
       estado: row.estado,
       notas: row.notas,
+      adelantoMonto:    row.adelanto_monto   ? parseFloat(row.adelanto_monto)   : null,
+      adelantoMetodo:   row.adelanto_metodo  ?? null,
+      comprobantePath:  row.comprobante_path ?? null,
       creadoPor: {
         id: row.creado_por_id,
         nombre: row.creado_por_nombre,

@@ -8,7 +8,7 @@ const pool = require('../database/db');
 class PacienteRepository extends IPacienteRepository {
   async findAll() {
     const query = `
-      SELECT p.id, p.ci, p.telefono, p.fecha_nacimiento,
+      SELECT p.id, p.ci, p.telefono, p.fecha_nacimiento, p.genero,
              p.usuario_id,
              u.nombre, u.apellido, u.email, u.estado,
              r.id as rol_id, r.nombre_rol,
@@ -25,7 +25,7 @@ class PacienteRepository extends IPacienteRepository {
 
   async findById(id) {
     const query = `
-      SELECT p.id, p.ci, p.telefono, p.fecha_nacimiento,
+      SELECT p.id, p.ci, p.telefono, p.fecha_nacimiento, p.genero,
              p.usuario_id,
              u.nombre, u.apellido, u.email, u.estado,
              r.id as rol_id, r.nombre_rol,
@@ -43,7 +43,7 @@ class PacienteRepository extends IPacienteRepository {
 
   async findByCi(ci) {
     const query = `
-      SELECT p.id, p.ci, p.telefono, p.fecha_nacimiento,
+      SELECT p.id, p.ci, p.telefono, p.fecha_nacimiento, p.genero,
              p.usuario_id,
              u.nombre, u.apellido, u.email, u.estado,
              r.id as rol_id, r.nombre_rol,
@@ -61,7 +61,7 @@ class PacienteRepository extends IPacienteRepository {
 
   async findByUsuarioId(usuarioId) {
     const query = `
-      SELECT p.id, p.ci, p.telefono, p.fecha_nacimiento,
+      SELECT p.id, p.ci, p.telefono, p.fecha_nacimiento, p.genero,
              p.usuario_id,
              u.nombre, u.apellido, u.email, u.estado,
              r.id as rol_id, r.nombre_rol,
@@ -79,7 +79,7 @@ class PacienteRepository extends IPacienteRepository {
 
   async findByCiudad(ciudadId) {
     const query = `
-      SELECT p.id, p.ci, p.telefono, p.fecha_nacimiento,
+      SELECT p.id, p.ci, p.telefono, p.fecha_nacimiento, p.genero,
              p.usuario_id,
              u.nombre, u.apellido, u.email, u.estado,
              r.id as rol_id, r.nombre_rol,
@@ -95,14 +95,14 @@ class PacienteRepository extends IPacienteRepository {
     return rows.map(row => this._mapRow(row));
   }
 
-  async create({ ci, telefono, fechaNacimiento, usuarioId }) {
+  async create({ ci, telefono, fechaNacimiento, genero, usuarioId }) {
     const query = `
-      INSERT INTO pacientes (ci, telefono, fecha_nacimiento, usuario_id)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO pacientes (ci, telefono, fecha_nacimiento, genero, usuario_id)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING id
     `;
     const { rows } = await pool.query(query, [
-      ci, telefono, fechaNacimiento, usuarioId
+      ci, telefono, fechaNacimiento, genero ?? null, usuarioId
     ]);
     return rows[0].id;
   }
@@ -146,7 +146,7 @@ class PacienteRepository extends IPacienteRepository {
     }
   }
 
-  async update(id, { ci, nombre, apellido, email, telefono, fechaNacimiento, ciudadId }) {
+  async update(id, { ci, nombre, apellido, email, telefono, fechaNacimiento, genero, ciudadId }) {
     // Actualizar ciudad en usuarios a través del paciente
     const getPacienteQuery = `
       SELECT usuario_id FROM pacientes WHERE id = $1
@@ -174,12 +174,12 @@ class PacienteRepository extends IPacienteRepository {
 
     await pool.query(
       `UPDATE pacientes SET ci = $1, telefono = $2,
-       fecha_nacimiento = $3, updated_at = NOW() WHERE id = $4`,
-      [ci, telefono, fechaNacimiento, id]
+       fecha_nacimiento = $3, genero = $4, updated_at = NOW() WHERE id = $5`,
+      [ci, telefono, fechaNacimiento, genero ?? null, id]
     );
   }
 
-  async completar(id, { ci, nombre, apellido, email, telefono, fechaNacimiento, ciudadId, password }) {
+  async completar(id, { ci, nombre, apellido, email, telefono, fechaNacimiento, genero, ciudadId, password }) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -202,9 +202,9 @@ class PacienteRepository extends IPacienteRepository {
     await client.query(
       `UPDATE pacientes
        SET ci = $1, telefono = $2,
-           fecha_nacimiento = $3, updated_at = NOW()
-       WHERE id = $4`,
-      [ci, telefono, fechaNacimiento, id]
+           fecha_nacimiento = $3, genero = $4, updated_at = NOW()
+       WHERE id = $5`,
+      [ci, telefono, fechaNacimiento, genero ?? null, id]
     );
 
     await client.query('COMMIT');
@@ -236,6 +236,7 @@ class PacienteRepository extends IPacienteRepository {
       ci: row.ci,
       telefono: row.telefono,
       fechaNacimiento: row.fecha_nacimiento,
+      genero: row.genero,
       usuario,
     });
   }

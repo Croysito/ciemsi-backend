@@ -21,8 +21,8 @@ class ServicioController {
 
   async crear(req, res) {
     try {
-      const { nombreServicio, tiempoMin } = req.body;
-      const resultado = await this.crearServicio.execute({ nombreServicio, tiempoMin });
+      const { nombreServicio, tiempoMin, roles } = req.body;
+      const resultado = await this.crearServicio.execute({ nombreServicio, tiempoMin, roles: roles || [] });
       return res.status(201).json(resultado);
     } catch (error) {
       return res.status(400).json({ mensaje: error.message });
@@ -45,9 +45,9 @@ class ServicioController {
   async modificar(req, res) {
     try {
       const { id } = req.params;
-      const { nombreServicio, tiempoMin, estado } = req.body;
+      const { nombreServicio, tiempoMin, estado, roles } = req.body;
       const resultado = await this.modificarServicio.execute(parseInt(id), {
-        nombreServicio, tiempoMin, estado,
+        nombreServicio, tiempoMin, estado, roles,
       });
       return res.status(200).json(resultado);
     } catch (error) {

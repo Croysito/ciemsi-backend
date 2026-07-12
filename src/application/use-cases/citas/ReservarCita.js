@@ -5,7 +5,7 @@ class ReservarCita {
     this.pacienteRepository = pacienteRepository;
   }
 
-  async execute({ fecha, hora, pacienteId, servicioId, ciudadId, agendaId, notas, creadoPor, rolCreador }) {
+  async execute({ fecha, hora, pacienteId, servicioId, ciudadId, agendaId, notas, creadoPor, rolCreador, adelantoMonto, adelantoMetodo }) {
     // 1. Verificar que el servicio esté permitido para la agenda seleccionada
     let servicioValido;
     if (agendaId) {
@@ -32,8 +32,7 @@ class ReservarCita {
     }
 
     // 2. Determinar estado según quién reserva
-    // Si la crea la Dra o Asistente queda CONFIRMADA directamente
-    const estado = rolCreador === 'Paciente' ? 'PENDIENTE' : 'CONFIRMADA';
+    const estado = rolCreador === 'Paciente' ? 'PENDIENTE_PAGO' : 'CONFIRMADA';
 
     // 3. Crear la cita
     const id = await this.citaRepository.create({
@@ -49,6 +48,14 @@ class ReservarCita {
     // 4. Actualizar estado si es necesario
     if (estado === 'CONFIRMADA') {
       await this.citaRepository.updateEstado(id, 'CONFIRMADA', null);
+    }
+
+    // Si la doctora registra adelanto, guardarlo
+    if (rolCreador !== 'Paciente' && adelantoMonto && adelantoMetodo) {
+      await this.citaRepository.updateAdelanto(id, {
+        monto: parseFloat(adelantoMonto),
+        metodo: adelantoMetodo,
+      });
     }
 
     return { mensaje: 'Cita reservada correctamente', citaId: id, estado };

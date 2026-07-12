@@ -70,6 +70,18 @@ class HistorialRepository extends IHistorialRepository {
     }));
   }
 
+  async getNotasRecientes(historialId, limit = 5) {
+    const { rows } = await pool.query(
+      `SELECT fecha, detalle
+       FROM notas_evolucion
+       WHERE historial_id = $1
+       ORDER BY fecha DESC
+       LIMIT $2`,
+      [historialId, limit]
+    );
+    return rows;
+  }
+
   async addLink(link) {
     const query = `
       INSERT INTO links (nombre, link, tipo, nota_id)
