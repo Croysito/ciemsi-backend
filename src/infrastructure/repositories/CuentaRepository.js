@@ -4,7 +4,23 @@ const HistorialMovimiento = require('../../domain/entities/HistorialMovimiento')
 const pool = require('../database/db');
 
 class CuentaRepository extends ICuentaRepository {
-  async calcularResumen(ciudadId) {
+  async calcularResumen(ciudadId, antesDe = null) {
+    const params = [ciudadId];
+    let corteIngresos = '';
+    let corteCompras = '';
+    let corteExtra = '';
+    let corteTraslados = '';
+    let corteTraspasos = '';
+    if (antesDe) {
+      params.push(antesDe);
+      const n = params.length;
+      corteIngresos  = ` AND fecha < $${n}`;
+      corteCompras   = ` AND c.fecha::timestamp < $${n}`;
+      corteExtra     = ` AND fecha < $${n}`;
+      corteTraslados = ` AND fecha_confirmacion < $${n}`;
+      corteTraspasos = ` AND fecha < $${n}`;
+    }
+
     const { rows } = await pool.query(
       `SELECT
         -- Saldo inicial
@@ -12,36 +28,36 @@ class CuentaRepository extends ICuentaRepository {
         (SELECT COALESCE(monto, 0) FROM saldo_inicial WHERE ciudad_id = $1 AND tipo = 'banco') AS ini_banco,
 
         -- Ingresos pacientes (cobros + ventas)
-        (SELECT COALESCE(SUM(monto), 0) FROM ingresos WHERE ciudad_id = $1 AND metodo = 'efectivo') AS ing_efec,
-        (SELECT COALESCE(SUM(monto), 0) FROM ingresos WHERE ciudad_id = $1 AND metodo = 'qr')      AS ing_qr,
+        (SELECT COALESCE(SUM(monto), 0) FROM ingresos WHERE ciudad_id = $1 AND metodo = 'efectivo' ${corteIngresos}) AS ing_efec,
+        (SELECT COALESCE(SUM(monto), 0) FROM ingresos WHERE ciudad_id = $1 AND metodo = 'qr' ${corteIngresos})      AS ing_qr,
 
         -- Movimientos extra ingresos
-        (SELECT COALESCE(SUM(monto), 0) FROM movimientos_extra WHERE ciudad_id = $1 AND tipo = 'ingreso' AND metodo = 'efectivo')      AS mex_ing_efec,
-        (SELECT COALESCE(SUM(monto), 0) FROM movimientos_extra WHERE ciudad_id = $1 AND tipo = 'ingreso' AND metodo = 'transferencia') AS mex_ing_trans,
+        (SELECT COALESCE(SUM(monto), 0) FROM movimientos_extra WHERE ciudad_id = $1 AND tipo = 'ingreso' AND metodo = 'efectivo' ${corteExtra})      AS mex_ing_efec,
+        (SELECT COALESCE(SUM(monto), 0) FROM movimientos_extra WHERE ciudad_id = $1 AND tipo = 'ingreso' AND metodo = 'transferencia' ${corteExtra}) AS mex_ing_trans,
 
         -- Compras (suma items suministros + items productos)
         (SELECT COALESCE(SUM(t.total), 0) FROM (
-          SELECT cs.total FROM compra_suministro cs JOIN compras c ON c.id = cs.compra_id WHERE c.ciudad_id = $1 AND c.metodo = 'efectivo'
+          SELECT cs.total FROM compra_suministro cs JOIN compras c ON c.id = cs.compra_id WHERE c.ciudad_id = $1 AND c.metodo = 'efectivo' ${corteCompras}
           UNION ALL
-          SELECT cp.precio_unitario * cp.cantidad FROM compra_producto cp JOIN compras c ON c.id = cp.compra_id WHERE c.ciudad_id = $1 AND c.metodo = 'efectivo'
+          SELECT cp.precio_unitario * cp.cantidad FROM compra_producto cp JOIN compras c ON c.id = cp.compra_id WHERE c.ciudad_id = $1 AND c.metodo = 'efectivo' ${corteCompras}
         ) t) AS comp_efec,
         (SELECT COALESCE(SUM(t.total), 0) FROM (
-          SELECT cs.total FROM compra_suministro cs JOIN compras c ON c.id = cs.compra_id WHERE c.ciudad_id = $1 AND c.metodo = 'transferencia'
+          SELECT cs.total FROM compra_suministro cs JOIN compras c ON c.id = cs.compra_id WHERE c.ciudad_id = $1 AND c.metodo = 'transferencia' ${corteCompras}
           UNION ALL
-          SELECT cp.precio_unitario * cp.cantidad FROM compra_producto cp JOIN compras c ON c.id = cp.compra_id WHERE c.ciudad_id = $1 AND c.metodo = 'transferencia'
+          SELECT cp.precio_unitario * cp.cantidad FROM compra_producto cp JOIN compras c ON c.id = cp.compra_id WHERE c.ciudad_id = $1 AND c.metodo = 'transferencia' ${corteCompras}
         ) t) AS comp_trans,
 
         -- Movimientos extra egresos
-        (SELECT COALESCE(SUM(monto), 0) FROM movimientos_extra WHERE ciudad_id = $1 AND tipo = 'egreso' AND metodo = 'efectivo')      AS mex_egr_efec,
-        (SELECT COALESCE(SUM(monto), 0) FROM movimientos_extra WHERE ciudad_id = $1 AND tipo = 'egreso' AND metodo = 'transferencia') AS mex_egr_trans,
+        (SELECT COALESCE(SUM(monto), 0) FROM movimientos_extra WHERE ciudad_id = $1 AND tipo = 'egreso' AND metodo = 'efectivo' ${corteExtra})      AS mex_egr_efec,
+        (SELECT COALESCE(SUM(monto), 0) FROM movimientos_extra WHERE ciudad_id = $1 AND tipo = 'egreso' AND metodo = 'transferencia' ${corteExtra}) AS mex_egr_trans,
 
         -- Traslados recibidos (egreso en destino, asignado a caja)
-        (SELECT COALESCE(SUM(costo_calculado), 0) FROM traslados WHERE ciudad_destino_id = $1 AND estado = 'COMPLETADO' AND costo_calculado IS NOT NULL) AS traslados_egr,
+        (SELECT COALESCE(SUM(costo_calculado), 0) FROM traslados WHERE ciudad_destino_id = $1 AND estado = 'COMPLETADO' AND costo_calculado IS NOT NULL ${corteTraslados}) AS traslados_egr,
 
         -- Traspasos entre caja y banco
-        (SELECT COALESCE(SUM(monto), 0) FROM traspasos_cuenta WHERE ciudad_id = $1 AND tipo = 'efectivo_a_banco') AS trp_efec_a_banco,
-        (SELECT COALESCE(SUM(monto), 0) FROM traspasos_cuenta WHERE ciudad_id = $1 AND tipo = 'banco_a_efectivo') AS trp_banco_a_efec`,
-      [ciudadId]
+        (SELECT COALESCE(SUM(monto), 0) FROM traspasos_cuenta WHERE ciudad_id = $1 AND tipo = 'efectivo_a_banco' ${corteTraspasos}) AS trp_efec_a_banco,
+        (SELECT COALESCE(SUM(monto), 0) FROM traspasos_cuenta WHERE ciudad_id = $1 AND tipo = 'banco_a_efectivo' ${corteTraspasos}) AS trp_banco_a_efec`,
+      params
     );
 
     const r = rows[0];

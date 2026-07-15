@@ -12,6 +12,8 @@ router.get('/', AsistenteController.listar.bind(AsistenteController));
 router.post('/', AsistenteController.crear.bind(AsistenteController));
 router.put('/:id', AsistenteController.modificar.bind(AsistenteController));
 router.patch('/:id/estado', AsistenteController.cambiarEstado.bind(AsistenteController));
+router.get('/:id/permisos', AsistenteController.obtenerPermisos.bind(AsistenteController));
+router.put('/:id/permisos', AsistenteController.actualizarPermisos.bind(AsistenteController));
 
 // Cualquier usuario autenticado puede cambiar su password
 router.post('/cambiar-password', AsistenteController.cambiarPassword.bind(AsistenteController));

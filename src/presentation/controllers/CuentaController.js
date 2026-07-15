@@ -1,6 +1,7 @@
 const RegistrarMovimientoExtra = require('../../application/use-cases/cuentas/RegistrarMovimientoExtra');
 const ListarMovimientosExtra   = require('../../application/use-cases/cuentas/ListarMovimientosExtra');
 const ObtenerResumenCuentas    = require('../../application/use-cases/cuentas/ObtenerResumenCuentas');
+const ObtenerResumenMensual    = require('../../application/use-cases/cuentas/ObtenerResumenMensual');
 const SetSaldoInicial          = require('../../application/use-cases/cuentas/SetSaldoInicial');
 const ObtenerHistorialMovimientos = require('../../application/use-cases/cuentas/ObtenerHistorialMovimientos');
 
@@ -9,6 +10,7 @@ class CuentaController {
     this.registrar        = new RegistrarMovimientoExtra(movimientoExtraRepository);
     this.listar           = new ListarMovimientosExtra(movimientoExtraRepository);
     this.resumen          = new ObtenerResumenCuentas(cuentaRepository, ciudadRepository);
+    this.resumenMensual   = new ObtenerResumenMensual(cuentaRepository, ciudadRepository);
     this.setSaldo         = new SetSaldoInicial(saldoInicialRepository);
     this.historial        = new ObtenerHistorialMovimientos(cuentaRepository);
     this.saldoRepo        = saldoInicialRepository;
@@ -54,6 +56,19 @@ class CuentaController {
     try {
       const { ciudadId } = req.query;
       const datos = await this.resumen.execute(ciudadId ? parseInt(ciudadId) : null);
+      return res.status(200).json(datos);
+    } catch (e) {
+      return res.status(500).json({ mensaje: e.message });
+    }
+  }
+
+  async obtenerResumenMensual(req, res) {
+    try {
+      const { ciudadId, anio, mes } = req.query;
+      if (!ciudadId || !anio || !mes) {
+        return res.status(400).json({ mensaje: 'ciudadId, anio y mes son requeridos' });
+      }
+      const datos = await this.resumenMensual.execute(parseInt(ciudadId), parseInt(anio), parseInt(mes));
       return res.status(200).json(datos);
     } catch (e) {
       return res.status(500).json({ mensaje: e.message });

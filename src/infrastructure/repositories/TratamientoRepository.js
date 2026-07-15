@@ -224,7 +224,7 @@ class TratamientoRepository extends ITratamientoRepository {
         tipo: row.tipo,
         marca: row.marca,
       }),
-      cantidad: row.cantidad,
+      cantidad: parseFloat(row.cantidad),
       agregadoPor: row.agregado_por,
     }));
   }

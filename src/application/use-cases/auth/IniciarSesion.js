@@ -1,8 +1,9 @@
 class IniciarSesion {
-  constructor(usuarioRepository, hashService, tokenService) {
+  constructor(usuarioRepository, hashService, tokenService, asistentePermisoRepository) {
     this.usuarioRepository = usuarioRepository;
     this.hashService = hashService;
     this.tokenService = tokenService;
+    this.asistentePermisoRepository = asistentePermisoRepository;
   }
 
   async execute({ email, password }) {
@@ -34,6 +35,11 @@ class IniciarSesion {
     ciudadNombre: usuario.ciudad ? usuario.ciudad.nombreCiudad : null,
   });
 
+let permisos;
+    if (usuario.rol.nombreRol === 'Asistente') {
+      permisos = await this.asistentePermisoRepository.findByUsuarioId(usuario.id);
+    }
+
 return {
   token,
   usuario: {
@@ -46,6 +52,7 @@ return {
       id: usuario.ciudad.id,
       nombreCiudad: usuario.ciudad.nombreCiudad,
     } : null,
+    ...(permisos ? { permisos } : {}),
   },
 };
   }

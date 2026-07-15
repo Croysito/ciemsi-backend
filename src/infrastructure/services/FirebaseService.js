@@ -1,14 +1,24 @@
 const admin = require('firebase-admin');
-const path = require('path');
 
 class FirebaseService {
   constructor() {
     if (!admin.apps.length) {
-      const serviceAccount = require('./firebase-credentials.json');
+      const serviceAccount = FirebaseService._cargarCredenciales();
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
       });
     }
+  }
+
+  // En producción (Railway) las credenciales llegan en base64 por variable de
+  // entorno, porque el .json está en .gitignore y no existe en el servidor.
+  // En desarrollo local se sigue usando el archivo firebase-credentials.json.
+  static _cargarCredenciales() {
+    if (process.env.FIREBASE_CREDENTIALS_BASE64) {
+      const json = Buffer.from(process.env.FIREBASE_CREDENTIALS_BASE64, 'base64').toString('utf8');
+      return JSON.parse(json);
+    }
+    return require('./firebase-credentials.json');
   }
 
   // Enviar notificación a un token específico

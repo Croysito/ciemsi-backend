@@ -9,6 +9,9 @@ router.use(authMiddleware);
 // Resumen de saldos por ciudad
 router.get('/resumen',    ctrl.obtenerResumen.bind(ctrl));
 
+// Resumen de un mes específico (saldo inicial arrastrado + movimientos + saldo final)
+router.get('/resumen-mensual', ctrl.obtenerResumenMensual.bind(ctrl));
+
 // Historial combinado de movimientos
 router.get('/historial',  ctrl.obtenerHistorial.bind(ctrl));
 

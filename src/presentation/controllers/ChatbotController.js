@@ -39,6 +39,7 @@ class ChatbotController {
           telefono:        paciente.telefono        || null,
           fechaNacimiento: paciente.fechaNacimiento  || null,
           edad:            paciente.edad             ?? null,
+          genero:          paciente.genero           || null,
         },
       });
     } catch (e) {

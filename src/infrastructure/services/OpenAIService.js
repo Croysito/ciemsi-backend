@@ -88,9 +88,13 @@ async function generarNotaFinal(resumenFinal, nombre) {
 
 async function generarAudio(texto) {
   const response = await openai.audio.speech.create({
-    model: 'tts-1',
+    model: 'gpt-4o-mini-tts',
     voice: 'nova',
     input: texto,
+    instructions:
+      'Habla siempre en español, con acento latinoamericano, tono cálido y claro. ' +
+      'No cambies de idioma bajo ninguna circunstancia, incluso si el texto contiene ' +
+      'palabras o nombres que parezcan de otro idioma.',
     response_format: 'mp3',
   });
   return Buffer.from(await response.arrayBuffer());

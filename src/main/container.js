@@ -19,6 +19,7 @@ const SesionAsistenteRepository = require('../infrastructure/repositories/Sesion
 const TraspasoRepository        = require('../infrastructure/repositories/TraspasoRepository');
 const ConfigClinicaRepository   = require('../infrastructure/repositories/ConfigClinicaRepository');
 const UsuarioRepository = require('../infrastructure/repositories/UsuarioRepository');
+const AsistentePermisoRepository = require('../infrastructure/repositories/AsistentePermisoRepository');
 
 const EmailService = require('../infrastructure/services/EmailService');
 const GoogleDriveService = require('../infrastructure/services/GoogleDriveService');
@@ -31,6 +32,8 @@ const CrearAsistente = require('../application/use-cases/asistentes/CrearAsisten
 const ListarAsistentes = require('../application/use-cases/asistentes/ListarAsistentes');
 const ModificarAsistente = require('../application/use-cases/asistentes/ModificarAsistente');
 const CambiarEstadoAsistente = require('../application/use-cases/asistentes/CambiarEstadoAsistente');
+const ObtenerPermisosAsistente = require('../application/use-cases/asistentes/ObtenerPermisosAsistente');
+const ActualizarPermisosAsistente = require('../application/use-cases/asistentes/ActualizarPermisosAsistente');
 const CambiarPassword = require('../application/use-cases/auth/CambiarPassword');
 const CerrarSesion = require('../application/use-cases/auth/CerrarSesion');
 const IniciarSesion = require('../application/use-cases/auth/IniciarSesion');
@@ -86,6 +89,7 @@ const repositories = {
   sesionAsistenteRepository:    new SesionAsistenteRepository(),
   traspasoRepository:           new TraspasoRepository(),
   configClinicaRepository:      new ConfigClinicaRepository(),
+  asistentePermisoRepository:   new AsistentePermisoRepository(),
 };
 
 const services = {
@@ -131,7 +135,8 @@ const authUseCases = {
   iniciarSesion: new IniciarSesion(
     repositories.usuarioRepository,
     services.hashService,
-    services.tokenService
+    services.tokenService,
+    repositories.asistentePermisoRepository
   ),
   recuperarContrasena: new RecuperarContrasena(
     repositories.usuarioRepository,
@@ -154,6 +159,14 @@ const asistenteUseCases = {
   ),
   cambiarEstadoAsistente: new CambiarEstadoAsistente(repositories.usuarioRepository),
   cambiarPassword: new CambiarPassword(repositories.usuarioRepository, services.hashService),
+  obtenerPermisosAsistente: new ObtenerPermisosAsistente(
+    repositories.usuarioRepository,
+    repositories.asistentePermisoRepository
+  ),
+  actualizarPermisosAsistente: new ActualizarPermisosAsistente(
+    repositories.usuarioRepository,
+    repositories.asistentePermisoRepository
+  ),
 };
 
 const ciudadUseCases = {

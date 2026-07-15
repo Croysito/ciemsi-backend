@@ -132,7 +132,7 @@ class TratamientoController {
       const resultado = await this.agregarSupministroAsistente.execute({
         tratamientoAsignadoId: parseInt(id),
         suministroId: parseInt(suministroId),
-        cantidad: parseInt(cantidad),
+        cantidad: parseFloat(cantidad),
       });
       return res.status(200).json(resultado);
     } catch (error) {

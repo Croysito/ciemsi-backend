@@ -5,12 +5,16 @@ class AsistenteController {
     modificarAsistente,
     cambiarEstadoAsistente,
     cambiarPassword,
+    obtenerPermisosAsistente,
+    actualizarPermisosAsistente,
   }) {
     this.listarAsistentes = listarAsistentes;
     this.crearAsistente = crearAsistente;
     this.modificarAsistente = modificarAsistente;
     this.cambiarEstadoAsistente = cambiarEstadoAsistente;
     this.cambiarPasswordUseCase = cambiarPassword;
+    this.obtenerPermisosAsistente = obtenerPermisosAsistente;
+    this.actualizarPermisosAsistente = actualizarPermisosAsistente;
   }
 
   async listar(req, res) {
@@ -64,6 +68,27 @@ class AsistenteController {
       const { id } = req.params;
       const { estado } = req.body;
       const resultado = await this.cambiarEstadoAsistente.execute(parseInt(id), estado);
+      return res.status(200).json(resultado);
+    } catch (error) {
+      return res.status(400).json({ mensaje: error.message });
+    }
+  }
+
+  async obtenerPermisos(req, res) {
+    try {
+      const { id } = req.params;
+      const permisos = await this.obtenerPermisosAsistente.execute(parseInt(id));
+      return res.status(200).json(permisos);
+    } catch (error) {
+      return res.status(400).json({ mensaje: error.message });
+    }
+  }
+
+  async actualizarPermisos(req, res) {
+    try {
+      const { id } = req.params;
+      const { permisos } = req.body;
+      const resultado = await this.actualizarPermisosAsistente.execute(parseInt(id), permisos || {});
       return res.status(200).json(resultado);
     } catch (error) {
       return res.status(400).json({ mensaje: error.message });

@@ -72,9 +72,9 @@ class SuministroRepository extends ISuministroRepository {
       umbral: parseInt(r.umbral) || 5,
       ciudad_id: parseInt(r.ciudad_id) || 0,
       nombre_ciudad: r.nombre_ciudad,
-      total_compras: parseInt(r.total_compras) || 0,
-      total_salidas: parseInt(r.total_salidas) || 0,
-      saldo: parseInt(r.saldo) || 0,
+      total_compras: parseFloat(r.total_compras) || 0,
+      total_salidas: parseFloat(r.total_salidas) || 0,
+      saldo: parseFloat(r.saldo) || 0,
       stock_bajo: r.stock_bajo === true || r.stock_bajo === 'true',
     };
   }
