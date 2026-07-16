@@ -1,6 +1,15 @@
 const { OpenAI } = require('openai');
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Instanciado de forma diferida: si OPENAI_API_KEY no está configurada, el
+// resto del servidor debe poder arrancar igual (el chatbot simplemente
+// fallará cuando se lo use, en vez de tumbar todo el proceso al arrancar).
+let _client = null;
+function getClient() {
+  if (!_client) {
+    _client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return _client;
+}
 
 const SYSTEM_PROMPT = (nombre, ciudad) => `
 Eres un asistente médico virtual amigable de la clínica CIEMSI, ubicada en ${ciudad || 'Bolivia'}.
@@ -49,7 +58,7 @@ async function enviarMensaje({ nombre, ciudad, nuevoMensaje, resumenPrevio, hist
     },
   ];
 
-  const response = await openai.chat.completions.create({
+  const response = await getClient().chat.completions.create({
     model: 'gpt-4o-mini',
     messages,
     response_format: { type: 'json_object' },
@@ -66,7 +75,7 @@ async function enviarMensaje({ nombre, ciudad, nuevoMensaje, resumenPrevio, hist
 }
 
 async function generarNotaFinal(resumenFinal, nombre) {
-  const response = await openai.chat.completions.create({
+  const response = await getClient().chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
       {
@@ -87,7 +96,7 @@ async function generarNotaFinal(resumenFinal, nombre) {
 }
 
 async function generarAudio(texto) {
-  const response = await openai.audio.speech.create({
+  const response = await getClient().audio.speech.create({
     model: 'gpt-4o-mini-tts',
     voice: 'nova',
     input: texto,
